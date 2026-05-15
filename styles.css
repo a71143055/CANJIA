@@ -643,6 +643,24 @@ h3 {
   box-shadow: var(--shadow);
 }
 
+.form-header {
+  margin: 0 0 24px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--line);
+}
+
+.form-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.form-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .join-form button {
   width: 100%;
   font-size: 16px;

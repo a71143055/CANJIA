@@ -146,14 +146,15 @@
     <section id="profile" class="profile band" aria-labelledby="profile-title">
       <div class="profile-copy">
         <p class="eyebrow">Login &amp; Profile Line</p>
-        <h2 id="profile-title">소개, 프로필 작성, 네이버 진입 라인</h2>
+        <h2 id="profile-title">프로필 작성 및 계정 연동</h2>
         <p>
-          처음 입장한 사람은 관심 분야와 제주 활동 계획을 남기고, 네이버 계정으로 회원가입 또는 로그인을 시작할 수 있습니다.
+          CANJIA에 참여하려면 먼저 관심 분야와 제주 활동 계획을 프로필로 작성해주세요.
+          Microsoft 계정으로 로그인하면 더 많은 기능을 사용할 수 있습니다.
         </p>
         <div class="auth-box">
-          <span class="auth-label">Microsoft 계정 연동</span>
+          <span class="auth-label">Microsoft 계정 연동 (선택사항)</span>
           <h3>마이크로소프트 계정으로 시작</h3>
-          <p>Microsoft 계정으로 로그인하고 프로필을 작성할 수 있습니다.</p>
+          <p>Microsoft 계정으로 로그인하고 프로필을 작성할 수 있습니다. (필수가 아닙니다)</p>
           <div class="auth-actions">
             <button class="ms-button" type="button" data-ms-auth="login">
               <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: inline; margin-right: 8px;">
@@ -170,6 +171,10 @@
       </div>
 
       <form class="join-form">
+        <div class="form-header">
+          <h3>프로필 작성</h3>
+          <p>아래 정보를 입력하고 CANJIA 커뮤니티에 참여하세요.</p>
+        </div>
         <label>
           이름
           <input type="text" name="name" placeholder="정구영" required>
@@ -191,7 +196,7 @@
           제주 활동 계획
           <textarea name="message" rows="5" placeholder="경제 자립, 취미 생활, 주거 이전, 회원 모집 계획을 적어주세요."></textarea>
         </label>
-        <button type="submit">프로필 미리보기</button>
+        <button type="submit" class="button primary">프로필 저장</button>
         <p class="form-note" role="status" aria-live="polite"></p>
       </form>
     </section>

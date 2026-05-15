@@ -479,10 +479,14 @@ function initMicrosoftLogin() {
   if (!authStatuses.length || !authButtons.length) return;
 
   if (!isConfigured) {
-    setStatus(authStatuses, "❌ ms-config.js에 마이크로소프트 Client ID를 입력해주세요.");
+    setStatus(authStatuses, "⚠️ Microsoft 계정 없이도 프로필을 작성할 수 있습니다. (ms-config.js에 Client ID 설정 시 로그인 가능)");
+    // 로그인 없이도 진행할 수 있도록 버튼 비활성화만 함
     authButtons.forEach((button) => {
-      button.disabled = true;
-      button.title = "Client ID 설정 필요";
+      button.disabled = false;  // 비활성화 하지 않음
+      button.title = "Microsoft 계정으로 로그인하려면 Client ID 설정 필요";
+      button.addEventListener("click", () => {
+        alert("Microsoft 계정 로그인 기능을 사용하려면:\n\n1. Azure Portal에서 앱 등록\n2. Application ID를 ms-config.js에 입력\n\n지금은 프로필을 직접 작성할 수 있습니다.");
+      });
     });
     return;
   }
