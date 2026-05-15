@@ -72,10 +72,7 @@ const defaultDocs = [
 ];
 
 const DOC_STORAGE_KEY = "canjia_documents";
-const MS_PROFILE_STORAGE_KEY = "canjia_ms_profile";
-const GOOGLE_PROFILE_STORAGE_KEY = "canjia_google_profile";
 const NAVER_PROFILE_STORAGE_KEY = "canjia_naver_profile";
-const AUTH_MODE_KEY = "canjia_ms_auth_mode";
 
 const API_BASE = (() => {
   // 개발 환경에서는 file:// 프로토콜 또는 localhost 사용
@@ -84,38 +81,6 @@ const API_BASE = (() => {
   }
   return window.location.origin;
 })();
-
-// MSAL 인스턴스 (전역)
-let msalInstance = null;
-
-async function initMsalInstance() {
-  if (msalInstance) return msalInstance;
-
-  const config = window.MS_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_MICROSOFT_CLIENT_ID";
-
-  if (!isConfigured) {
-    console.warn("마이크로소프트 Client ID가 설정되지 않았습니다.");
-    return null;
-  }
-
-  const msalConfig = {
-    auth: {
-      clientId: config.clientId,
-      authority: config.authority,
-      redirectUri: config.redirectUri
-    },
-    cache: {
-      cacheLocation: "localStorage",
-      storeAuthStateInCookie: true
-    }
-  };
-
-  msalInstance = new msal.PublicClientApplication(msalConfig);
-  await msalInstance.initialize();
-  
-  return msalInstance;
-}
 
 async function fetchDocuments(field = null) {
   try {
