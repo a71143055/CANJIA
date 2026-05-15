@@ -90,6 +90,21 @@ def naver_debug():
     return send_project_file("naver-debug.html")
 
 
+@app.get("/google-config.js")
+def google_config():
+    return send_project_file("google-config.js")
+
+
+@app.get("/google-callback.html")
+def google_callback():
+    return send_project_file("google-callback.html")
+
+
+@app.get("/google-debug.html")
+def google_debug():
+    return send_project_file("google-debug.html")
+
+
 @app.get("/ms-config.js")
 def ms_config():
     return send_project_file("ms-config.js")

@@ -73,6 +73,8 @@ const defaultDocs = [
 
 const DOC_STORAGE_KEY = "canjia_documents";
 const MS_PROFILE_STORAGE_KEY = "canjia_ms_profile";
+const GOOGLE_PROFILE_STORAGE_KEY = "canjia_google_profile";
+const NAVER_PROFILE_STORAGE_KEY = "canjia_naver_profile";
 const AUTH_MODE_KEY = "canjia_ms_auth_mode";
 
 const API_BASE = (() => {
@@ -515,16 +517,125 @@ function initMicrosoftLogin() {
   }
 }
 
+async function startGoogleAuth() {
+  const config = window.GOOGLE_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_GOOGLE_CLIENT_ID";
+
+  if (!isConfigured) {
+    alert("⚠️ 구글 Client ID가 설정되지 않았습니다.\n\ngoogle-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://console.cloud.google.com 방문\n2. OAuth 2.0 동의 화면 설정\n3. 사용자 인증 정보 > OAuth 2.0 클라이언트 ID 생성\n4. 승인된 리디렉션 URI: http://localhost:5000/google-callback.html\n5. 받은 Client ID를 google-config.js에 입력");
+    return;
+  }
+
+  setStatus(authStatuses, "🔄 구글 로그인을 시작합니다...");
+
+  try {
+    window.open("google-callback.html", "google-login", "width=600,height=700");
+  } catch (error) {
+    console.error("구글 로그인 오류:", error);
+    setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
+  }
+}
+
+function initGoogleLogin() {
+  const config = window.GOOGLE_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_GOOGLE_CLIENT_ID";
+  const storedProfile = localStorage.getItem(GOOGLE_PROFILE_STORAGE_KEY);
+
+  if (storedProfile) {
+    try {
+      updateAuthStatus(JSON.parse(storedProfile));
+    } catch {
+      localStorage.removeItem(GOOGLE_PROFILE_STORAGE_KEY);
+    }
+  }
+
+  if (!authStatuses.length) return;
+
+  if (!isConfigured) {
+    return;
+  }
+
+  if (typeof google === "undefined") {
+    console.warn("구글 SDK를 불러오지 못했습니다.");
+    return;
+  }
+
+  try {
+    // 구글 로그인 버튼을 위한 이벤트 핸들러 추가
+    const googleLoginButton = document.querySelector("[data-google-auth]");
+    if (googleLoginButton) {
+      googleLoginButton.addEventListener("click", () => startGoogleAuth());
+    }
+  } catch (error) {
+    console.error("구글 로그인 초기화 오류:", error);
+  }
+}
+
+async function startNaverAuth() {
+  const config = window.NAVER_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
+
+  if (!isConfigured) {
+    alert("⚠️ 네이버 Client ID가 설정되지 않았습니다.\n\nnaver-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://developers.naver.com 방문\n2. 로그인 후 'Application' > '애플리케이션 등록'\n3. 사용 API: Naver ID Login 선택\n4. Callback URL: http://localhost:5000/naver-callback.html\n5. 받은 Client ID를 naver-config.js에 입력");
+    return;
+  }
+
+  setStatus(authStatuses, "🔄 네이버 로그인을 시작합니다...");
+
+  try {
+    window.open("naver-callback.html", "naver-login", "width=600,height=700");
+  } catch (error) {
+    console.error("네이버 로그인 오류:", error);
+    setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
+  }
+}
+
+function initNaverLogin() {
+  const config = window.NAVER_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
+  const storedProfile = localStorage.getItem(NAVER_PROFILE_STORAGE_KEY);
+
+  if (storedProfile) {
+    try {
+      updateAuthStatus(JSON.parse(storedProfile));
+    } catch {
+      localStorage.removeItem(NAVER_PROFILE_STORAGE_KEY);
+    }
+  }
+
+  if (!authStatuses.length) return;
+
+  if (!isConfigured) {
+    return;
+  }
+
+  try {
+    // 네이버 로그인 버튼을 위한 이벤트 핸들러 추가
+    const naverLoginButton = document.querySelector("[data-naver-auth]");
+    if (naverLoginButton) {
+      naverLoginButton.addEventListener("click", () => startNaverAuth());
+    }
+  } catch (error) {
+    console.error("네이버 로그인 초기화 오류:", error);
+  }
+}
+
 window.addEventListener("message", (event) => {
   if (window.location.protocol !== "file:" && event.origin !== window.location.origin) return;
-  if (event.data?.type !== "MS_LOGIN_SUCCESS") return;
-
-  updateAuthStatus(event.data.profile);
+  if (event.data?.type === "MS_LOGIN_SUCCESS") {
+    updateAuthStatus(event.data.profile);
+  } else if (event.data?.type === "GOOGLE_LOGIN_SUCCESS") {
+    updateAuthStatus(event.data.profile);
+  } else if (event.data?.type === "NAVER_LOGIN_SUCCESS") {
+    updateAuthStatus(event.data.profile);
+  }
 });
 
 setSelectedField(selectedFieldKey);
 window.addEventListener("load", async () => {
   initMicrosoftLogin();
+  initGoogleLogin();
+  initNaverLogin();
   
   // 초기 문서 로드
   documents = await loadDocuments();

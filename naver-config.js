@@ -21,7 +21,7 @@
 window.NAVER_LOGIN_CONFIG = {
   // 네이버 개발자센터에서 발급받은 Client ID
   // https://developers.naver.com/apps 에서 확인 가능
-  clientId: "YOUR_NAVER_CLIENT_ID",
+  clientId: "NXdjdYA_c8Ujg1GgvgH3",
   
   // 등록한 Callback URL (naver-callback.html의 경로)
   callbackUrl: new URL("naver-callback.html", window.location.href).href,
