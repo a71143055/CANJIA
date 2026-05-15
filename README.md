@@ -6,7 +6,8 @@
 
 ### 1단계: Python 환경 설정
 ```bash
-pip install -r requirements.txt
+python --version  # Python 3.9 이상 권장
+python -m pip install -r requirements.txt
 ```
 
 ### 2단계: 마이크로소프트 Azure 등록

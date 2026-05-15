@@ -25,6 +25,7 @@
 ## Useful workflows
 
 - Install dependencies: `pip install -r requirements.txt`
+  - Requires Python 3.9+ and uses constrained versions for Flask 3.x, Flask-Cors 4.x, Werkzeug 3.x.
 - Run locally: `python app.py`
 - Open `http://localhost:5000` in the browser.
 - Debug auth setup: `http://localhost:5000/ms-debug.html` and `http://localhost:5000/naver-debug.html`.
