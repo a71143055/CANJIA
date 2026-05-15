@@ -56,6 +56,14 @@ def index():
     return send_project_file("index.html")
 
 
+@app.get("/favicon.ico")
+def favicon():
+    favicon_path = BASE_DIR / "favicon.ico"
+    if favicon_path.exists():
+        return send_project_file("favicon.ico")
+    return "", 204
+
+
 @app.get("/naver-callback")
 @app.get("/naver-callback.html")
 def naver_callback():
