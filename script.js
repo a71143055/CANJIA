@@ -72,9 +72,8 @@ const defaultDocs = [
 ];
 
 const DOC_STORAGE_KEY = "canjia_documents";
-const PROFILE_STORAGE_KEY = "canjia_naver_profile";
-const LEGACY_PROFILE_STORAGE_KEY = "dabangeum_naver_profile";
-const AUTH_MODE_KEY = "canjia_naver_auth_mode";
+const MS_PROFILE_STORAGE_KEY = "canjia_ms_profile";
+const AUTH_MODE_KEY = "canjia_ms_auth_mode";
 
 const API_BASE = (() => {
   // 개발 환경에서는 file:// 프로토콜 또는 localhost 사용
@@ -83,6 +82,38 @@ const API_BASE = (() => {
   }
   return window.location.origin;
 })();
+
+// MSAL 인스턴스 (전역)
+let msalInstance = null;
+
+async function initMsalInstance() {
+  if (msalInstance) return msalInstance;
+
+  const config = window.MS_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_MICROSOFT_CLIENT_ID";
+
+  if (!isConfigured) {
+    console.warn("마이크로소프트 Client ID가 설정되지 않았습니다.");
+    return null;
+  }
+
+  const msalConfig = {
+    auth: {
+      clientId: config.clientId,
+      authority: config.authority,
+      redirectUri: config.redirectUri
+    },
+    cache: {
+      cacheLocation: "localStorage",
+      storeAuthStateInCookie: true
+    }
+  };
+
+  msalInstance = new msal.PublicClientApplication(msalConfig);
+  await msalInstance.initialize();
+  
+  return msalInstance;
+}
 
 async function fetchDocuments(field = null) {
   try {
@@ -372,62 +403,83 @@ profileForm?.addEventListener("submit", (event) => {
 function updateAuthStatus(profile) {
   if (!profile) return;
 
-  const displayName = profile.nickname || profile.name || profile.email || "네이버 사용자";
-  const mode = sessionStorage.getItem(AUTH_MODE_KEY);
-  const actionText = mode === "signup" ? "회원가입 준비가 완료되었습니다" : "로그인되었습니다";
-
-  setStatus(authStatuses, `${displayName}님, 네이버로 ${actionText}.`);
-  sessionStorage.removeItem(AUTH_MODE_KEY);
+  const displayName = profile.name || profile.email || "사용자";
+  setStatus(authStatuses, `✅ ${displayName}님, 로그인되었습니다.`);
 }
 
-function findGeneratedNaverLink() {
-  const container = document.querySelector("#naver_id_login");
-  return container?.querySelector("a");
-}
-
-function startNaverAuth(mode) {
-  const config = window.NAVER_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
+async function startMicrosoftAuth() {
+  const config = window.MS_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_MICROSOFT_CLIENT_ID";
 
   if (!isConfigured) {
-    alert("⚠️ 네이버 Client ID가 설정되지 않았습니다.\n\nnaver-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://developers.naver.com 방문\n2. '애플리케이션' > '애플리케이션 등록'\n3. 애플리케이션 이름: CANJIA\n4. 서비스 URL: http://localhost:5000\n5. Callback URL: http://localhost:5000/naver-callback.html\n6. 받은 Client ID를 naver-config.js에 입력");
+    alert("⚠️ 마이크로소프트 Client ID가 설정되지 않았습니다.\n\nms-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://portal.azure.com 방문\n2. 'Azure Active Directory' > '앱 등록'\n3. '새 등록' 클릭\n4. 앱 이름: CANJIA\n5. 리디렉션 URI: http://localhost:5000/ms-callback.html\n6. 받은 Application ID를 ms-config.js에 입력");
     return;
   }
 
-  const generatedLink = findGeneratedNaverLink();
+  setStatus(authStatuses, "🔄 마이크로소프트 로그인을 시작합니다...");
 
-  if (!generatedLink) {
-    setStatus(authStatuses, "네이버 로그인 버튼을 준비하는 중입니다. 잠시 후 다시 눌러 주세요.");
-    setTimeout(() => startNaverAuth(mode), 1000);
-    return;
+  try {
+    const instance = await initMsalInstance();
+    if (!instance) {
+      setStatus(authStatuses, "❌ 마이크로소프트 SDK를 초기화하지 못했습니다.");
+      return;
+    }
+
+    // 팝업으로 로그인
+    const loginRequest = {
+      scopes: window.MS_LOGIN_CONFIG.scopes || ["user.read"]
+    };
+
+    const response = await instance.loginPopup(loginRequest);
+    
+    if (response && response.account) {
+      const account = response.account;
+      const profile = {
+        provider: "microsoft",
+        email: account.username || account.localAccountId || "",
+        name: account.name || "",
+        id: account.localAccountId || ""
+      };
+
+      // 로컬 스토리지에 저장
+      localStorage.setItem(MS_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+
+      // 백엔드에 프로필 저장
+      await saveProfile({
+        email: profile.email,
+        name: profile.name,
+        nickname: profile.name || profile.email?.split("@")[0] || "사용자",
+        profileImage: "",
+        interest: "",
+        provider: "microsoft",
+        joined: new Date().toISOString()
+      });
+
+      updateAuthStatus(profile);
+    }
+  } catch (error) {
+    console.error("마이크로소프트 로그인 오류:", error);
+    setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
   }
-
-  setStatus(authStatuses, mode === "signup"
-    ? "네이버 계정으로 회원가입을 시작합니다."
-    : "네이버 로그인을 시작합니다.");
-
-  sessionStorage.setItem(AUTH_MODE_KEY, mode);
-  generatedLink.click();
 }
 
-function initNaverLogin() {
-  const config = window.NAVER_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
-  const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY) || localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY);
+function initMicrosoftLogin() {
+  const config = window.MS_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_MICROSOFT_CLIENT_ID";
+  const storedProfile = localStorage.getItem(MS_PROFILE_STORAGE_KEY);
 
   if (storedProfile) {
     try {
       updateAuthStatus(JSON.parse(storedProfile));
     } catch {
-      localStorage.removeItem(PROFILE_STORAGE_KEY);
-      localStorage.removeItem(LEGACY_PROFILE_STORAGE_KEY);
+      localStorage.removeItem(MS_PROFILE_STORAGE_KEY);
     }
   }
 
   if (!authStatuses.length || !authButtons.length) return;
 
   if (!isConfigured) {
-    setStatus(authStatuses, "❌ naver-config.js에 네이버 Client ID를 입력해주세요.");
+    setStatus(authStatuses, "❌ ms-config.js에 마이크로소프트 Client ID를 입력해주세요.");
     authButtons.forEach((button) => {
       button.disabled = true;
       button.title = "Client ID 설정 필요";
@@ -435,8 +487,8 @@ function initNaverLogin() {
     return;
   }
 
-  if (typeof naver_id_login === "undefined") {
-    setStatus(authStatuses, "❌ 네이버 로그인 SDK를 불러오지 못했습니다.");
+  if (typeof msal === "undefined") {
+    setStatus(authStatuses, "❌ 마이크로소프트 로그인 SDK를 불러오지 못했습니다.");
     authButtons.forEach((button) => {
       button.disabled = true;
     });
@@ -444,24 +496,15 @@ function initNaverLogin() {
   }
 
   try {
-    const naverLogin = new naver_id_login(config.clientId, config.callbackUrl);
-    const state = naverLogin.getUniqState();
-
-    naverLogin.setButton("green", 3, 48);
-    naverLogin.setDomain(config.serviceUrl);
-    naverLogin.setState(state);
-    naverLogin.setPopup();
-    naverLogin.init_naver_id_login();
-
     authButtons.forEach((button) => {
       button.disabled = false;
-      button.addEventListener("click", () => startNaverAuth(button.dataset.naverAuth));
+      button.addEventListener("click", () => startMicrosoftAuth());
     });
 
-    setStatus(authStatuses, "✅ 네이버 로그인 준비 완료");
+    setStatus(authStatuses, "✅ 마이크로소프트 로그인 준비 완료");
   } catch (error) {
-    console.error("네이버 로그인 초기화 오류:", error);
-    setStatus(authStatuses, `❌ 네이버 로그인 초기화 실패: ${error.message}`);
+    console.error("마이크로소프트 로그인 초기화 오류:", error);
+    setStatus(authStatuses, `❌ 로그인 초기화 실패: ${error.message}`);
     authButtons.forEach((button) => {
       button.disabled = true;
     });
@@ -470,14 +513,14 @@ function initNaverLogin() {
 
 window.addEventListener("message", (event) => {
   if (window.location.protocol !== "file:" && event.origin !== window.location.origin) return;
-  if (event.data?.type !== "NAVER_LOGIN_SUCCESS") return;
+  if (event.data?.type !== "MS_LOGIN_SUCCESS") return;
 
   updateAuthStatus(event.data.profile);
 });
 
 setSelectedField(selectedFieldKey);
 window.addEventListener("load", async () => {
-  initNaverLogin();
+  initMicrosoftLogin();
   
   // 초기 문서 로드
   documents = await loadDocuments();

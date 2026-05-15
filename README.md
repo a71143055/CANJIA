@@ -1,6 +1,6 @@
 # CANJIA - 제주 산업 발전 및 네트워크 공동체
 
-네이버 로그인이 작동하지 않을 때의 설정 가이드
+마이크로소프트 로그인 설정 가이드
 
 ## 🚀 빠른 시작
 
@@ -9,52 +9,50 @@
 pip install -r requirements.txt
 ```
 
-### 2단계: 네이버 개발자 센터 등록
+### 2단계: 마이크로소프트 Azure 등록
 
-#### A. 네이버 개발자 센터 방문
-1. [네이버 개발자 센터](https://developers.naver.com) 방문
-2. 우측 상단 **로그인** (네이버 계정 필요)
+#### A. Azure Portal 방문
+1. [Azure Portal](https://portal.azure.com) 방문
+2. Microsoft 계정 또는 회사 계정으로 로그인
 
-#### B. 애플리케이션 등록
-1. 상단 **Application** 메뉴
-2. **애플리케이션 등록** 버튼 클릭
-3. 다음 정보 입력:
-   - **애플리케이션 이름**: CANJIA
-   - **사용 API**: 검색창에서 "로그인" 검색 > **Naver ID Login** 선택
-   - **환경**: PC 웹
-   - **비로그인 오픈 API**: 선택 안 함
+#### B. Azure Active Directory 앱 등록
+1. 좌측 사이드바에서 **Azure Active Directory** 검색 및 선택
+2. **앱 등록** 메뉴 클릭
+3. **+ 새 등록** 버튼 클릭
 
-#### C. 서비스 URL 등록
-1. **개발 환경**:
-   - 서비스 URL: `http://localhost:5000`
-   - Callback URL: `http://localhost:5000/naver-callback.html`
+#### C. 앱 정보 입력
+다음 정보를 입력하고 **등록** 클릭:
 
-2. **배포 환경** (나중에):
-   - 서비스 URL: `https://yourdomain.com`
-   - Callback URL: `https://yourdomain.com/naver-callback.html`
+```
+이름: CANJIA
+지원 계정 유형: 모든 조직 디렉토리의 계정 및 개인 Microsoft 계정
+리디렉션 URI (웹): http://localhost:5000/ms-callback.html
+```
 
-#### D. Client ID 복사
-1. 등록 완료 후 **내 애플리케이션** 메뉴에서 CANJIA 선택
-2. **Client ID** 복사
+#### D. Application ID 복사
+1. 등록 완료 후 **개요** 페이지로 이동
+2. **Application (Client) ID** 값 복사 (32자리 영문/숫자)
 
-### 3단계: naver-config.js 설정
+### 3단계: ms-config.js 설정
 
-`naver-config.js` 파일을 텍스트 에디터로 열고:
+`ms-config.js` 파일을 텍스트 에디터로 열고:
 
 ```javascript
-window.NAVER_LOGIN_CONFIG = {
-  clientId: "YOUR_NAVER_CLIENT_ID",  // ← 여기에 Client ID 붙여넣기
-  callbackUrl: new URL("naver-callback.html", window.location.href).href,
-  serviceUrl: new URL(".", window.location.href).href
+window.MS_LOGIN_CONFIG = {
+  clientId: "YOUR_MICROSOFT_CLIENT_ID",  // ← 여기에 Application ID 붙여넣기
+  redirectUri: new URL("ms-callback.html", window.location.href).href,
+  scopes: ["user.read", "profile", "email", "openid"],
+  authority: "https://login.microsoftonline.com/common"
 };
 ```
 
 예시:
 ```javascript
-window.NAVER_LOGIN_CONFIG = {
-  clientId: "mG82KmZ1Qg2OxZ0QyZ1Qw",  // 실제 Client ID
-  callbackUrl: new URL("naver-callback.html", window.location.href).href,
-  serviceUrl: new URL(".", window.location.href).href
+window.MS_LOGIN_CONFIG = {
+  clientId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",  // 실제 Application ID
+  redirectUri: new URL("ms-callback.html", window.location.href).href,
+  scopes: ["user.read", "profile", "email", "openid"],
+  authority: "https://login.microsoftonline.com/common"
 };
 ```
 
@@ -68,19 +66,19 @@ python app.py
 
 ## 🔍 문제 해결
 
-### 1. "네이버 로그인 버튼이 보이지 않음"
-→ **naver-config.js에 Client ID가 설정되지 않았습니다**
-- `naver-config.js` 파일을 확인하고 Client ID를 입력하세요
+### 1. "마이크로소프트 로그인 버튼이 보이지 않음"
+→ **ms-config.js에 Application ID가 설정되지 않았습니다**
+- `ms-config.js` 파일을 확인하고 Application ID를 입력하세요
 
-### 2. "네이버 SDK를 불러올 수 없음"
+### 2. "Invalid redirect_uri 오류"
+→ **등록된 리디렉션 URI와 설정이 다릅니다**
+- Azure Portal에서 등록한 URI: `http://localhost:5000/ms-callback.html`
+- ms-config.js의 redirectUri와 일치하는지 확인
+
+### 3. "마이크로소프트 SDK를 불러올 수 없음"
 → **네트워크 문제**
 - 인터넷 연결 확인
-- https://static.nid.naver.com/js/naverLogin_implicit-1.0.3.js 접근 확인
-
-### 3. "Callback URL 불일치 오류"
-→ **등록된 Callback URL과 실제 URL이 다릅니다**
-- 네이버 개발자 센터에서 등록한 URL: `http://localhost:5000/naver-callback.html`
-- `naver-config.js`의 callbackUrl이 일치하는지 확인
+- https://alcdn.msauth.net/browser/2.45.0/js/msal-browser.min.js 접근 확인
 
 ### 4. "로그인은 되지만 프로필이 저장되지 않음"
 → **백엔드 API 연결 오류**
@@ -91,14 +89,14 @@ python app.py
 
 설정 상태를 확인하려면:
 ```
-http://localhost:5000/naver-debug.html
+http://localhost:5000/ms-debug.html
 ```
 
 여기서 다음을 확인할 수 있습니다:
-- ✅ Client ID 설정 상태
-- ✅ 네이버 SDK 로딩 상태
-- ✅ Callback URL 설정
-- ✅ Service URL 설정
+- ✅ Application ID 설정 상태
+- ✅ 마이크로소프트 SDK 로딩 상태
+- ✅ 리디렉션 URI 설정
+- ✅ Authority 설정
 
 ## 📂 프로젝트 구조
 
@@ -106,9 +104,9 @@ http://localhost:5000/naver-debug.html
 New project/
 ├── app.py                    # Flask 백엔드
 ├── index.html                # 메인 페이지
-├── naver-callback.html       # 네이버 로그인 콜백
-├── naver-config.js           # ⭐ 네이버 설정 (Client ID 필수)
-├── naver-debug.html          # 디버그 페이지
+├── ms-callback.html          # 마이크로소프트 로그인 콜백
+├── ms-config.js              # ⭐ 마이크로소프트 설정 (Application ID 필수)
+├── ms-debug.html             # 디버그 페이지
 ├── script.js                 # 프론트엔드 로직
 ├── styles.css                # 스타일
 ├── requirements.txt          # Python 의존성
@@ -120,13 +118,13 @@ New project/
 ## 🔐 보안 주의사항
 
 ⚠️ **프로덕션 배포 시**:
-1. `naver-config.js`의 Client ID를 환경 변수로 관리
+1. `ms-config.js`의 Application ID를 환경 변수로 관리
 2. HTTPS 사용 필수
-3. Callback URL을 실제 도메인으로 변경
-4. 민감한 정보는 백엔드에서만 처리
+3. 리디렉션 URI를 실제 도메인으로 변경
+4. 클라이언트 암호는 백엔드에서만 사용
 
 ## 📞 지원
 
 추가 도움이 필요하면:
-- 네이버 개발자 센터 문서: https://developers.naver.com/docs/login/overview
-- 네이버 로그인 SDK: https://developers.naver.com/docs/login/sdk
+- Microsoft 로그인 문서: https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-overview
+- MSAL.js 문서: https://learn.microsoft.com/en-us/azure/active-directory/develop/msal-browser-migration-guide

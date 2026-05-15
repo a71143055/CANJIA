@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CANJIA 마이크로소프트 로그인 디버그</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: #f9f9f9;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    
+    .status-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+    }
+    
+    .status-icon.ok {
+      background: #4caf50;
+    }
+    
+    .status-icon.error {
+      background: #f44336;
+    }
+    
+    .status-text {
+      flex: 1;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    h2 {
+      color: #666;
+      font-size: 16px;
+      margin-top: 0;
+    }
+    
+    .code {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+    }
+    
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    button:hover {
+      background: #0052a3;
+    }
+    
+    .info {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 2px;
+    }
+    
+    .warning {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 2px;
+    }
+    
+    ol {
+      padding-left: 20px;
+    }
+    
+    li {
+      margin: 10px 0;
+    }
+    
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 CANJIA 마이크로소프트 로그인 디버그</h1>
+  
+  <div class="section">
+    <div class="card">
+      <h2>환경 정보</h2>
+      <div class="status-item">
+        <div class="status-icon ok">✓</div>
+        <div class="status-text">
+          <strong>현재 URL:</strong> <span id="current-url"></span>
+        </div>
+      </div>
+      <div class="status-item">
+        <div class="status-icon ok">✓</div>
+        <div class="status-text">
+          <strong>프로토콜:</strong> <span id="protocol"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="card">
+      <h2>마이크로소프트 설정 확인</h2>
+      <div id="config-status"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="card">
+      <h2>마이크로소프트 SDK 로딩 상태</h2>
+      <div id="sdk-status"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="card">
+      <h2>단계별 설정 가이드</h2>
+      <ol>
+        <li>
+          <strong>Azure Portal 방문:</strong>
+          <a href="https://portal.azure.com" target="_blank">https://portal.azure.com</a>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">Microsoft 계정 (Outlook, Live 등)으로 로그인</p>
+        </li>
+        <li>
+          <strong>Azure Active Directory 선택</strong>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">좌측 사이드바에서 찾거나 상단 검색창 사용</p>
+        </li>
+        <li>
+          <strong>"앱 등록" 선택</strong>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">좌측 메뉴의 "앱 등록" 클릭</p>
+        </li>
+        <li>
+          <strong>"새 등록" 버튼 클릭</strong>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">우측 상단의 녹색 "새 등록" 버튼</p>
+        </li>
+        <li>
+          <strong>앱 정보 입력</strong>
+          <div class="code" style="margin: 10px 0;">
+이름: CANJIA
+지원 계정 유형: 모든 조직 디렉토리의 계정 및 개인 Microsoft 계정
+리디렉션 URI (웹): http://localhost:5000/ms-callback.html
+          </div>
+        </li>
+        <li>
+          <strong>"등록" 버튼 클릭</strong>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">앱이 생성되면 다음 페이지로 이동</p>
+        </li>
+        <li>
+          <strong>Application (Client) ID 복사</strong>
+          <p style="margin: 5px 0; color: #666; font-size: 14px;">개요 페이지에서 "Application (Client) ID" 값을 복사</p>
+        </li>
+        <li>
+          <strong>ms-config.js 파일 수정</strong>
+          <div class="code" style="margin: 10px 0;">
+clientId: "복사한 ID를 여기에 붙여넣기"
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="card">
+      <h2>⚠️ 일반적인 문제</h2>
+      
+      <div class="warning" style="margin-bottom: 20px;">
+        <strong>Q: "Invalid redirect_uri" 오류</strong>
+        <p>
+          Azure Portal에 등록된 리디렉션 URI가 ms-config.js의 redirectUri와 정확히 일치하는지 확인하세요.
+          <br/>
+          <code>http://localhost:5000/ms-callback.html</code>
+        </p>
+      </div>
+
+      <div class="warning" style="margin-bottom: 20px;">
+        <strong>Q: 로그인 버튼이 작동하지 않음</strong>
+        <p>
+          1. ms-config.js에 Client ID가 입력되었는지 확인
+          <br/>
+          2. 마이크로소프트 SDK가 로드되었는지 확인 (아래 상태 확인)
+          <br/>
+          3. 개발자 도구(F12)의 콘솔에서 오류 메시지 확인
+        </p>
+      </div>
+
+      <div class="warning">
+        <strong>Q: 프로필이 저장되지 않음</strong>
+        <p>
+          1. Flask 백엔드 서버가 실행 중인지 확인: <code>python app.py</code>
+          <br/>
+          2. 개발자 도구 Network 탭에서 /api/profiles 요청 확인
+          <br/>
+          3. 백엔드 콘솔에서 오류 메시지 확인
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="ms-config.js"></script>
+  <script src="https://alcdn.msauth.net/browser/2.45.0/js/msal-browser.min.js"></script>
+
+  <script>
+    // 환경 정보
+    document.getElementById("current-url").textContent = window.location.href;
+    document.getElementById("protocol").textContent = window.location.protocol;
+
+    // 마이크로소프트 설정 확인
+    const configStatus = document.getElementById("config-status");
+    const config = window.MS_LOGIN_CONFIG || {};
+    const isConfigured = config.clientId && config.clientId !== "YOUR_MICROSOFT_CLIENT_ID";
+
+    let html = '<div class="status-item">';
+    if (isConfigured) {
+      html += '<div class="status-icon ok">✓</div>';
+      html += '<div class="status-text"><strong>✅ Client ID가 설정되었습니다</strong></div>';
+    } else {
+      html += '<div class="status-icon error">✕</div>';
+      html += '<div class="status-text"><strong>❌ Client ID가 설정되지 않았습니다</strong><br>ms-config.js에서 "YOUR_MICROSOFT_CLIENT_ID"를 실제 Client ID로 변경하세요.</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="status-item">';
+    html += '<div class="status-icon ok">✓</div>';
+    html += '<div class="status-text"><strong>Redirect URI:</strong><br><span class="code">' + (config.redirectUri || 'N/A') + '</span></div>';
+    html += '</div>';
+
+    html += '<div class="status-item">';
+    html += '<div class="status-icon ok">✓</div>';
+    html += '<div class="status-text"><strong>Authority:</strong><br><span class="code">' + (config.authority || 'N/A') + '</span></div>';
+    html += '</div>';
+
+    configStatus.innerHTML = html;
+
+    // SDK 로딩 상태
+    setTimeout(() => {
+      const sdkStatus = document.getElementById("sdk-status");
+      let sdkHtml = '<div class="status-item">';
+      
+      if (typeof msal !== "undefined") {
+        sdkHtml += '<div class="status-icon ok">✓</div>';
+        sdkHtml += '<div class="status-text"><strong>✅ 마이크로소프트 MSAL SDK가 성공적으로 로드되었습니다</strong></div>';
+      } else {
+        sdkHtml += '<div class="status-icon error">✕</div>';
+        sdkHtml += '<div class="status-text"><strong>❌ 마이크로소프트 SDK를 불러올 수 없습니다</strong><br>네트워크 연결을 확인하고 페이지를 새로고침하세요.</div>';
+      }
+      
+      sdkHtml += '</div>';
+      sdkStatus.innerHTML = sdkHtml;
+    }, 1500);
+  </script>
+</body>
+</html>

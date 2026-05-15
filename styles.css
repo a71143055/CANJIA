@@ -563,7 +563,7 @@ h3 {
 
 .auth-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   margin-top: 18px;
 }
 
@@ -602,7 +602,28 @@ h3 {
   background: var(--naver);
 }
 
+.ms-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid #0078d4;
+  border-radius: 8px;
+  color: white;
+  background: #0078d4;
+  font-weight: 600;
+  width: 100%;
+}
+
+.ms-button:hover:not(:disabled) {
+  background: #0066b2;
+  border-color: #0066b2;
+}
+
 .naver-button:disabled,
+.ms-button:disabled,
 .nav-auth:disabled {
   opacity: 0.62;
   cursor: not-allowed;

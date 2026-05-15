@@ -82,6 +82,21 @@ def naver_debug():
     return send_project_file("naver-debug.html")
 
 
+@app.get("/ms-config.js")
+def ms_config():
+    return send_project_file("ms-config.js")
+
+
+@app.get("/ms-callback.html")
+def ms_callback():
+    return send_project_file("ms-callback.html")
+
+
+@app.get("/ms-debug.html")
+def ms_debug():
+    return send_project_file("ms-debug.html")
+
+
 # API 엔드포인트
 @app.get("/api/documents")
 def get_documents():

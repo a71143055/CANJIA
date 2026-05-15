@@ -6,8 +6,8 @@
   <title>CANJIA | 제주 산업 발전 및 네트워크 공동체</title>
   <link rel="preconnect" href="https://images.unsplash.com">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://static.nid.naver.com/js/naverLogin_implicit-1.0.3.js" charset="utf-8" defer></script>
-  <script src="naver-config.js" defer></script>
+  <script src="https://alcdn.msauth.net/browser/2.45.0/js/msal-browser.min.js" defer></script>
+  <script src="ms-config.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -22,8 +22,7 @@
     <nav class="nav" aria-label="주요 메뉴">
       <a href="#about">소개</a>
       <a href="#profile">프로필 작성</a>
-      <button class="nav-auth" type="button" data-naver-auth="signup">네이버 회원가입</button>
-      <button class="nav-auth" type="button" data-naver-auth="login">네이버 로그인</button>
+      <button class="nav-auth" type="button" data-ms-auth="login">마이크로소프트 로그인</button>
     </nav>
   </header>
 
@@ -152,21 +151,21 @@
           처음 입장한 사람은 관심 분야와 제주 활동 계획을 남기고, 네이버 계정으로 회원가입 또는 로그인을 시작할 수 있습니다.
         </p>
         <div class="auth-box">
-          <span class="auth-label">Microsoft Client ID &amp; Secret 연동 전 단계</span>
-          <h3>네이버 계정으로 시작</h3>
-          <p>네이버 개발자센터에서 발급받은 Client ID를 설정하면 버튼이 활성화됩니다.</p>
+          <span class="auth-label">Microsoft 계정 연동</span>
+          <h3>마이크로소프트 계정으로 시작</h3>
+          <p>Microsoft 계정으로 로그인하고 프로필을 작성할 수 있습니다.</p>
           <div class="auth-actions">
-            <button class="naver-button" type="button" data-naver-auth="login">
-              <span>N</span>
-              네이버 로그인
-            </button>
-            <button class="naver-button outline" type="button" data-naver-auth="signup">
-              <span>N</span>
-              네이버 회원가입
+            <button class="ms-button" type="button" data-ms-auth="login">
+              <svg width="16" height="16" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: inline; margin-right: 8px;">
+                <rect x="1" y="1" width="9" height="9" fill="currentColor"/>
+                <rect x="11" y="1" width="9" height="9" fill="currentColor"/>
+                <rect x="1" y="11" width="9" height="9" fill="currentColor"/>
+                <rect x="11" y="11" width="9" height="9" fill="currentColor"/>
+              </svg>
+              마이크로소프트 로그인
             </button>
           </div>
           <p class="auth-status" role="status" aria-live="polite"></p>
-          <div id="naver_id_login" aria-hidden="true"></div>
         </div>
       </div>
 
