@@ -76,6 +76,78 @@ const PROFILE_STORAGE_KEY = "canjia_naver_profile";
 const LEGACY_PROFILE_STORAGE_KEY = "dabangeum_naver_profile";
 const AUTH_MODE_KEY = "canjia_naver_auth_mode";
 
+const API_BASE = (() => {
+  // 개발 환경에서는 file:// 프로토콜 또는 localhost 사용
+  if (window.location.protocol === "file:") {
+    return "http://localhost:5000";
+  }
+  return window.location.origin;
+})();
+
+async function fetchDocuments(field = null) {
+  try {
+    const url = new URL("/api/documents", API_BASE);
+    if (field) url.searchParams.append("field", field);
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("문서 조회 실패");
+    
+    return await response.json();
+  } catch (error) {
+    console.error("API 오류:", error);
+    return [];
+  }
+}
+
+async function saveDocument(docData) {
+  try {
+    const response = await fetch(`${API_BASE}/api/documents`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(docData)
+    });
+    
+    if (!response.ok) throw new Error("문서 저장 실패");
+    
+    return await response.json();
+  } catch (error) {
+    console.error("API 오류:", error);
+    throw error;
+  }
+}
+
+async function deleteDocument(docId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/documents/${docId}`, {
+      method: "DELETE"
+    });
+    
+    if (!response.ok) throw new Error("문서 삭제 실패");
+    
+    return await response.json();
+  } catch (error) {
+    console.error("API 오류:", error);
+    throw error;
+  }
+}
+
+async function saveProfile(profileData) {
+  try {
+    const response = await fetch(`${API_BASE}/api/profiles`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profileData)
+    });
+    
+    if (!response.ok) throw new Error("프로필 저장 실패");
+    
+    return await response.json();
+  } catch (error) {
+    console.error("API 오류:", error);
+    throw error;
+  }
+}
+
 const fieldTabs = document.querySelectorAll("[data-field-target]");
 const selectedKicker = document.querySelector("#selected-kicker");
 const selectedTitle = document.querySelector("#workspace-title");
@@ -98,21 +170,17 @@ const profileNote = document.querySelector(".form-note");
 const authStatuses = document.querySelectorAll(".auth-status");
 const authButtons = document.querySelectorAll("[data-naver-auth]");
 
-let documents = loadDocuments();
+let documents = [];
 let selectedFieldKey = "agi";
 let editingDocId = "";
 
-function loadDocuments() {
+async function loadDocuments() {
   try {
-    const stored = JSON.parse(localStorage.getItem(DOC_STORAGE_KEY));
-    return Array.isArray(stored) && stored.length ? stored : [...defaultDocs];
+    const allDocs = await fetchDocuments();
+    return allDocs.length > 0 ? allDocs : [...defaultDocs];
   } catch {
     return [...defaultDocs];
   }
-}
-
-function saveDocuments() {
-  localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(documents));
 }
 
 function setStatus(elements, message) {
@@ -213,16 +281,17 @@ function createDocumentFromForm() {
     date
   };
 
-  if (editingDocId) {
-    documents = documents.map((doc) => (doc.id === editingDocId ? payload : doc));
-  } else {
-    documents = [payload, ...documents];
-  }
-
-  editingDocId = payload.id;
-  saveDocuments();
-  setSelectedField(payload.field);
-  docNote.textContent = `"${payload.title}" 문서가 등록되었습니다.`;
+  saveDocument(payload).then(() => {
+    editingDocId = payload.id;
+    // 문서 목록 새로고침
+    loadDocuments().then((docs) => {
+      documents = docs;
+      setSelectedField(payload.field);
+      docNote.textContent = `"${payload.title}" 문서가 등록되었습니다.`;
+    });
+  }).catch(() => {
+    docNote.textContent = "문서 저장에 실패했습니다.";
+  });
 }
 
 async function shareCurrentDocument() {
@@ -280,7 +349,24 @@ profileForm?.addEventListener("submit", (event) => {
     return;
   }
 
-  profileNote.textContent = `${name}님의 ${interest} 프로필 초안이 준비됐습니다.`;
+  // 네이버 프로필 정보 함께 저장
+  const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY) || localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY);
+  const navierProfile = storedProfile ? JSON.parse(storedProfile) : {};
+  
+  const profilePayload = {
+    email: navierProfile.email || `user-${Date.now()}@canjia.local`,
+    name: name,
+    nickname: navierProfile.nickname || name,
+    profileImage: navierProfile.profileImage || "",
+    interest: interest,
+    joined: new Date().toISOString()
+  };
+
+  saveProfile(profilePayload).then(() => {
+    profileNote.textContent = `${name}님의 프로필이 저장되었습니다.`;
+  }).catch(() => {
+    profileNote.textContent = "프로필 저장에 실패했습니다.";
+  });
 });
 
 function updateAuthStatus(profile) {
@@ -369,4 +455,10 @@ window.addEventListener("message", (event) => {
 });
 
 setSelectedField(selectedFieldKey);
-window.addEventListener("load", initNaverLogin);
+window.addEventListener("load", async () => {
+  initNaverLogin();
+  
+  // 초기 문서 로드
+  documents = await loadDocuments();
+  setSelectedField(selectedFieldKey);
+});
