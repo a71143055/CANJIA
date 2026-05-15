@@ -77,6 +77,11 @@ def naver_config():
     return send_project_file("naver-config.js")
 
 
+@app.get("/naver-debug.html")
+def naver_debug():
+    return send_project_file("naver-debug.html")
+
+
 # API 엔드포인트
 @app.get("/api/documents")
 def get_documents():

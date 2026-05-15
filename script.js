@@ -386,10 +386,19 @@ function findGeneratedNaverLink() {
 }
 
 function startNaverAuth(mode) {
+  const config = window.NAVER_LOGIN_CONFIG || {};
+  const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
+
+  if (!isConfigured) {
+    alert("⚠️ 네이버 Client ID가 설정되지 않았습니다.\n\nnaver-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://developers.naver.com 방문\n2. '애플리케이션' > '애플리케이션 등록'\n3. 애플리케이션 이름: CANJIA\n4. 서비스 URL: http://localhost:5000\n5. Callback URL: http://localhost:5000/naver-callback.html\n6. 받은 Client ID를 naver-config.js에 입력");
+    return;
+  }
+
   const generatedLink = findGeneratedNaverLink();
 
   if (!generatedLink) {
     setStatus(authStatuses, "네이버 로그인 버튼을 준비하는 중입니다. 잠시 후 다시 눌러 주세요.");
+    setTimeout(() => startNaverAuth(mode), 1000);
     return;
   }
 
@@ -418,33 +427,45 @@ function initNaverLogin() {
   if (!authStatuses.length || !authButtons.length) return;
 
   if (!isConfigured) {
-    setStatus(authStatuses, "naver-config.js에 네이버 Client ID를 입력하면 사용할 수 있습니다.");
+    setStatus(authStatuses, "❌ naver-config.js에 네이버 Client ID를 입력해주세요.");
     authButtons.forEach((button) => {
       button.disabled = true;
+      button.title = "Client ID 설정 필요";
     });
     return;
   }
 
   if (typeof naver_id_login === "undefined") {
-    setStatus(authStatuses, "네이버 로그인 SDK를 불러오지 못했습니다.");
+    setStatus(authStatuses, "❌ 네이버 로그인 SDK를 불러오지 못했습니다.");
     authButtons.forEach((button) => {
       button.disabled = true;
     });
     return;
   }
 
-  const naverLogin = new naver_id_login(config.clientId, config.callbackUrl);
-  const state = naverLogin.getUniqState();
+  try {
+    const naverLogin = new naver_id_login(config.clientId, config.callbackUrl);
+    const state = naverLogin.getUniqState();
 
-  naverLogin.setButton("green", 3, 48);
-  naverLogin.setDomain(config.serviceUrl);
-  naverLogin.setState(state);
-  naverLogin.setPopup();
-  naverLogin.init_naver_id_login();
+    naverLogin.setButton("green", 3, 48);
+    naverLogin.setDomain(config.serviceUrl);
+    naverLogin.setState(state);
+    naverLogin.setPopup();
+    naverLogin.init_naver_id_login();
 
-  authButtons.forEach((button) => {
-    button.addEventListener("click", () => startNaverAuth(button.dataset.naverAuth));
-  });
+    authButtons.forEach((button) => {
+      button.disabled = false;
+      button.addEventListener("click", () => startNaverAuth(button.dataset.naverAuth));
+    });
+
+    setStatus(authStatuses, "✅ 네이버 로그인 준비 완료");
+  } catch (error) {
+    console.error("네이버 로그인 초기화 오류:", error);
+    setStatus(authStatuses, `❌ 네이버 로그인 초기화 실패: ${error.message}`);
+    authButtons.forEach((button) => {
+      button.disabled = true;
+    });
+  }
 }
 
 window.addEventListener("message", (event) => {
