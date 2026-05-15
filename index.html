@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CANJIA | 제주 산업 발전 및 네트워크 공동체</title>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://static.nid.naver.com/js/naverLogin_implicit-1.0.3.js" charset="utf-8" defer></script>
+  <script src="naver-config.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="CANJIA 홈">
+      <span class="brand-mark">C</span>
+      <span class="brand-text">
+        <strong>CANJIA</strong>
+        <small>Jeju Industry Network</small>
+      </span>
+    </a>
+    <nav class="nav" aria-label="주요 메뉴">
+      <a href="#about">소개</a>
+      <a href="#profile">프로필 작성</a>
+      <button class="nav-auth" type="button" data-naver-auth="signup">네이버 회원가입</button>
+      <button class="nav-auth" type="button" data-naver-auth="login">네이버 로그인</button>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section id="about" class="hero" aria-labelledby="hero-title">
+      <div class="hero-media" aria-hidden="true"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <p class="eyebrow">작성인 정구영 · 2026년 05월 15일</p>
+        <h1 id="hero-title">제주 산업 발전 및 네트워크 공동체</h1>
+        <p class="hero-copy">
+          AGI와 ACTF, 무중력 감각을 닮은 스포츠, 카페 취업과 바리스타 기술을 하나의 경제 자립 네트워크로 묶는 CANJIA 운영 공간입니다.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#documents">문서 작성</a>
+          <a class="button secondary" href="#fields">분야 보기</a>
+        </div>
+      </div>
+      <aside class="hero-panel" aria-label="CANJIA 정의">
+        <strong>CANJIA</strong>
+        <p>Community for Association &amp; Network in Jeju Industry Association</p>
+        <dl>
+          <div>
+            <dt>발전</dt>
+            <dd>AGI · ACTF</dd>
+          </div>
+          <div>
+            <dt>네트워크</dt>
+            <dd>스포츠 · 카페 · 기술</dd>
+          </div>
+        </dl>
+      </aside>
+    </section>
+
+    <section id="fields" class="field-band band" aria-labelledby="fields-title">
+      <div class="section-head">
+        <p class="eyebrow">Field Bar</p>
+        <h2 id="fields-title">분야별 문서 등록 창</h2>
+      </div>
+      <div class="field-tabs" role="tablist" aria-label="CANJIA 분야">
+        <button class="field-tab active" type="button" data-field-target="agi">AGI</button>
+        <button class="field-tab" type="button" data-field-target="actf">ACTF</button>
+        <button class="field-tab" type="button" data-field-target="swimming">수영</button>
+        <button class="field-tab" type="button" data-field-target="skydiving">스카이 다이빙</button>
+        <button class="field-tab" type="button" data-field-target="climbing">암벽 등반</button>
+        <button class="field-tab" type="button" data-field-target="cafe">카페 취업</button>
+        <button class="field-tab" type="button" data-field-target="barista">기술 연마</button>
+      </div>
+    </section>
+
+    <section id="documents" class="workspace" aria-labelledby="workspace-title">
+      <div class="workspace-panel">
+        <div class="section-head compact">
+          <p id="selected-kicker" class="eyebrow">AGI</p>
+          <h2 id="workspace-title">AGI[범용 인공 지능]</h2>
+          <p id="selected-description">
+            사람의 수준에 맞고 사람의 활동 및 외관을 본따서 만든 인공지능입니다.
+          </p>
+        </div>
+        <div class="field-meta-grid" aria-label="선택 분야 정보">
+          <article>
+            <span>영역</span>
+            <strong id="selected-domain">발전의 영역</strong>
+          </article>
+          <article>
+            <span>목표 연결</span>
+            <strong id="selected-goal">기술 증진 · 생명 연장 · 우주 유영</strong>
+          </article>
+        </div>
+        <div class="doc-toolbar">
+          <h3>등록 문서</h3>
+          <span id="doc-count">0개</span>
+        </div>
+        <div id="doc-list" class="doc-list" aria-live="polite"></div>
+      </div>
+
+      <form id="doc-form" class="doc-editor">
+        <div class="editor-top">
+          <div>
+            <p class="eyebrow">Document Page</p>
+            <h2>문서 작성</h2>
+          </div>
+          <button id="new-doc" class="icon-button" type="button" aria-label="새 문서">+</button>
+        </div>
+        <label>
+          분야
+          <select id="doc-field" name="field" required>
+            <option value="agi">AGI</option>
+            <option value="actf">ACTF</option>
+            <option value="swimming">수영</option>
+            <option value="skydiving">스카이 다이빙</option>
+            <option value="climbing">암벽 등반</option>
+            <option value="cafe">카페 취업</option>
+            <option value="barista">기술 연마</option>
+          </select>
+        </label>
+        <label>
+          작성자
+          <input id="doc-author" name="author" type="text" value="정구영" required>
+        </label>
+        <label>
+          문서 제목
+          <input id="doc-title" name="title" type="text" placeholder="예: 제주 AGI 연구 모임 제안" required>
+        </label>
+        <label>
+          요약
+          <textarea id="doc-summary" name="summary" rows="3" placeholder="핵심 내용을 짧게 적어주세요."></textarea>
+        </label>
+        <label>
+          본문
+          <textarea id="doc-body" name="body" rows="10" placeholder="구글 문서처럼 정리할 내용을 입력하세요."></textarea>
+        </label>
+        <div class="editor-actions">
+          <button class="button primary" type="submit">문서 등록</button>
+          <button id="share-doc" class="button neutral" type="button">공유 문구</button>
+        </div>
+        <p id="doc-note" class="doc-note" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="profile" class="profile band" aria-labelledby="profile-title">
+      <div class="profile-copy">
+        <p class="eyebrow">Login &amp; Profile Line</p>
+        <h2 id="profile-title">소개, 프로필 작성, 네이버 진입 라인</h2>
+        <p>
+          처음 입장한 사람은 관심 분야와 제주 활동 계획을 남기고, 네이버 계정으로 회원가입 또는 로그인을 시작할 수 있습니다.
+        </p>
+        <div class="auth-box">
+          <span class="auth-label">Microsoft Client ID &amp; Secret 연동 전 단계</span>
+          <h3>네이버 계정으로 시작</h3>
+          <p>네이버 개발자센터에서 발급받은 Client ID를 설정하면 버튼이 활성화됩니다.</p>
+          <div class="auth-actions">
+            <button class="naver-button" type="button" data-naver-auth="login">
+              <span>N</span>
+              네이버 로그인
+            </button>
+            <button class="naver-button outline" type="button" data-naver-auth="signup">
+              <span>N</span>
+              네이버 회원가입
+            </button>
+          </div>
+          <p class="auth-status" role="status" aria-live="polite"></p>
+          <div id="naver_id_login" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <form class="join-form">
+        <label>
+          이름
+          <input type="text" name="name" placeholder="정구영" required>
+        </label>
+        <label>
+          관심 분야
+          <select name="interest" required>
+            <option value="">선택하기</option>
+            <option>AGI</option>
+            <option>ACTF</option>
+            <option>수영</option>
+            <option>스카이 다이빙</option>
+            <option>암벽 등반</option>
+            <option>카페 취업</option>
+            <option>기술 연마</option>
+          </select>
+        </label>
+        <label>
+          제주 활동 계획
+          <textarea name="message" rows="5" placeholder="경제 자립, 취미 생활, 주거 이전, 회원 모집 계획을 적어주세요."></textarea>
+        </label>
+        <button type="submit">프로필 미리보기</button>
+        <p class="form-note" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="goals" aria-labelledby="goals-title">
+      <div class="section-head">
+        <p class="eyebrow">Goals</p>
+        <h2 id="goals-title">CANJIA의 일곱 목표</h2>
+      </div>
+      <div class="goal-grid">
+        <article>
+          <span>01</span>
+          <h3>경제 자립</h3>
+          <p>사람들과 함께 실제 활동을 시작하고 수익으로 이어지는 기반을 만듭니다.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>취미 생활</h3>
+          <p>운동과 카페 활동을 생활 리듬과 경제 활동의 접점으로 삼습니다.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>기술 증진</h3>
+          <p>주거 이전 이후 AGI와 ACTF 기술 도약을 실행할 준비를 쌓습니다.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>회원 모집</h3>
+          <p>혼자 할 수 없는 목표를 공동 문서, 모임, 역할 분담으로 확장합니다.</p>
+        </article>
+        <article>
+          <span>05</span>
+          <h3>주거 이전</h3>
+          <p>제주를 중심지로 두고 활동 분야를 하나의 생활권 안에 배치합니다.</p>
+        </article>
+        <article>
+          <span>06</span>
+          <h3>생명 연장</h3>
+          <p>기술적 생명 연장을 장기 연구와 도약의 초석으로 다룹니다.</p>
+        </article>
+        <article>
+          <span>07</span>
+          <h3>우주 유영</h3>
+          <p>AGI와 ACTF의 정점 목표를 우주 환경 적응과 확장으로 연결합니다.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>CANJIA</span>
+    <span>Community for Association &amp; Network in Jeju Industry Association</span>
+  </footer>
+</body>
+</html>

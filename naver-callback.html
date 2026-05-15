@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CANJIA 네이버 로그인 처리</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://static.nid.naver.com/js/naverLogin_implicit-1.0.3.js" charset="utf-8"></script>
+  <script src="naver-config.js"></script>
+</head>
+<body class="callback-page">
+  <main class="callback-card">
+    <span class="brand-mark">N</span>
+    <h1>네이버 로그인 처리 중</h1>
+    <p id="callback-message">잠시만 기다려 주세요.</p>
+  </main>
+
+  <script>
+    const message = document.querySelector("#callback-message");
+    const config = window.NAVER_LOGIN_CONFIG || {};
+    const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
+
+    if (!isConfigured || typeof naver_id_login === "undefined") {
+      message.textContent = "네이버 Client ID 설정을 먼저 완료해 주세요.";
+    } else {
+      const naverLogin = new naver_id_login(config.clientId, config.callbackUrl);
+
+      window.handleNaverProfile = function () {
+        const profile = {
+          provider: "naver",
+          email: naverLogin.getProfileData("email") || "",
+          nickname: naverLogin.getProfileData("nickname") || "",
+          name: naverLogin.getProfileData("name") || "",
+          profileImage: naverLogin.getProfileData("profile_image") || ""
+        };
+
+        localStorage.setItem("canjia_naver_profile", JSON.stringify(profile));
+
+        if (window.opener) {
+          const targetOrigin = window.location.protocol === "file:" ? "*" : window.location.origin;
+          window.opener.postMessage({ type: "NAVER_LOGIN_SUCCESS", profile }, targetOrigin);
+          message.textContent = "로그인이 완료되었습니다. 창을 닫는 중입니다.";
+          window.close();
+          return;
+        }
+
+        message.textContent = `${profile.nickname || profile.name || "네이버 사용자"}님, 로그인이 완료되었습니다.`;
+      };
+
+      naverLogin.get_naver_userprofile("handleNaverProfile()");
+    }
+  </script>
+</body>
+</html>
