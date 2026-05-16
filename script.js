@@ -348,14 +348,14 @@ profileForm?.addEventListener("submit", (event) => {
   }
 
   // 네이버 프로필 정보 함께 저장
-  const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY) || localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY);
-  const navierProfile = storedProfile ? JSON.parse(storedProfile) : {};
+  const storedProfile = localStorage.getItem(NAVER_PROFILE_STORAGE_KEY);
+  const naverProfile = storedProfile ? JSON.parse(storedProfile) : {};
   
   const profilePayload = {
-    email: navierProfile.email || `user-${Date.now()}@canjia.local`,
+    email: naverProfile.email || `user-${Date.now()}@canjia.local`,
     name: name,
-    nickname: navierProfile.nickname || name,
-    profileImage: navierProfile.profileImage || "",
+    nickname: naverProfile.nickname || name,
+    profileImage: naverProfile.profileImage || "",
     interest: interest,
     joined: new Date().toISOString()
   };
@@ -374,167 +374,9 @@ function updateAuthStatus(profile) {
   setStatus(authStatuses, `✅ ${displayName}님, 로그인되었습니다.`);
 }
 
-async function startMicrosoftAuth() {
-  const config = window.MS_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_MICROSOFT_CLIENT_ID";
+// Microsoft login removed: app now supports Naver-only auth.
 
-  if (!isConfigured) {
-    alert("⚠️ 마이크로소프트 Client ID가 설정되지 않았습니다.\n\nms-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://portal.azure.com 방문\n2. 'Azure Active Directory' > '앱 등록'\n3. '새 등록' 클릭\n4. 앱 이름: CANJIA\n5. 리디렉션 URI: http://localhost:5000/ms-callback.html\n6. 받은 Application ID를 ms-config.js에 입력");
-    return;
-  }
-
-  setStatus(authStatuses, "🔄 마이크로소프트 로그인을 시작합니다...");
-
-  try {
-    const instance = await initMsalInstance();
-    if (!instance) {
-      setStatus(authStatuses, "❌ 마이크로소프트 SDK를 초기화하지 못했습니다.");
-      return;
-    }
-
-    // 팝업으로 로그인
-    const loginRequest = {
-      scopes: window.MS_LOGIN_CONFIG.scopes || ["user.read"]
-    };
-
-    const response = await instance.loginPopup(loginRequest);
-    
-    if (response && response.account) {
-      const account = response.account;
-      const profile = {
-        provider: "microsoft",
-        email: account.username || account.localAccountId || "",
-        name: account.name || "",
-        id: account.localAccountId || ""
-      };
-
-      // 로컬 스토리지에 저장
-      localStorage.setItem(MS_PROFILE_STORAGE_KEY, JSON.stringify(profile));
-
-      // 백엔드에 프로필 저장
-      await saveProfile({
-        email: profile.email,
-        name: profile.name,
-        nickname: profile.name || profile.email?.split("@")[0] || "사용자",
-        profileImage: "",
-        interest: "",
-        provider: "microsoft",
-        joined: new Date().toISOString()
-      });
-
-      updateAuthStatus(profile);
-    }
-  } catch (error) {
-    console.error("마이크로소프트 로그인 오류:", error);
-    setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
-  }
-}
-
-function initMicrosoftLogin() {
-  const config = window.MS_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_MICROSOFT_CLIENT_ID";
-  const storedProfile = localStorage.getItem(MS_PROFILE_STORAGE_KEY);
-
-  if (storedProfile) {
-    try {
-      updateAuthStatus(JSON.parse(storedProfile));
-    } catch {
-      localStorage.removeItem(MS_PROFILE_STORAGE_KEY);
-    }
-  }
-
-  if (!authStatuses.length || !authButtons.length) return;
-
-  if (!isConfigured) {
-    setStatus(authStatuses, "⚠️ Microsoft 계정 없이도 프로필을 작성할 수 있습니다. (ms-config.js에 Client ID 설정 시 로그인 가능)");
-    // 로그인 없이도 진행할 수 있도록 버튼 비활성화만 함
-    authButtons.forEach((button) => {
-      button.disabled = false;  // 비활성화 하지 않음
-      button.title = "Microsoft 계정으로 로그인하려면 Client ID 설정 필요";
-      button.addEventListener("click", () => {
-        alert("Microsoft 계정 로그인 기능을 사용하려면:\n\n1. Azure Portal에서 앱 등록\n2. Application ID를 ms-config.js에 입력\n\n지금은 프로필을 직접 작성할 수 있습니다.");
-      });
-    });
-    return;
-  }
-
-  if (typeof msal === "undefined") {
-    setStatus(authStatuses, "❌ 마이크로소프트 로그인 SDK를 불러오지 못했습니다.");
-    authButtons.forEach((button) => {
-      button.disabled = true;
-    });
-    return;
-  }
-
-  try {
-    authButtons.forEach((button) => {
-      button.disabled = false;
-      button.addEventListener("click", () => startMicrosoftAuth());
-    });
-
-    setStatus(authStatuses, "✅ 마이크로소프트 로그인 준비 완료");
-  } catch (error) {
-    console.error("마이크로소프트 로그인 초기화 오류:", error);
-    setStatus(authStatuses, `❌ 로그인 초기화 실패: ${error.message}`);
-    authButtons.forEach((button) => {
-      button.disabled = true;
-    });
-  }
-}
-
-async function startGoogleAuth() {
-  const config = window.GOOGLE_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_GOOGLE_CLIENT_ID";
-
-  if (!isConfigured) {
-    alert("⚠️ 구글 Client ID가 설정되지 않았습니다.\n\ngoogle-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://console.cloud.google.com 방문\n2. OAuth 2.0 동의 화면 설정\n3. 사용자 인증 정보 > OAuth 2.0 클라이언트 ID 생성\n4. 승인된 리디렉션 URI: http://localhost:5000/google-callback.html\n5. 받은 Client ID를 google-config.js에 입력");
-    return;
-  }
-
-  setStatus(authStatuses, "🔄 구글 로그인을 시작합니다...");
-
-  try {
-    window.open("google-callback.html", "google-login", "width=600,height=700");
-  } catch (error) {
-    console.error("구글 로그인 오류:", error);
-    setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
-  }
-}
-
-function initGoogleLogin() {
-  const config = window.GOOGLE_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_GOOGLE_CLIENT_ID";
-  const storedProfile = localStorage.getItem(GOOGLE_PROFILE_STORAGE_KEY);
-
-  if (storedProfile) {
-    try {
-      updateAuthStatus(JSON.parse(storedProfile));
-    } catch {
-      localStorage.removeItem(GOOGLE_PROFILE_STORAGE_KEY);
-    }
-  }
-
-  if (!authStatuses.length) return;
-
-  if (!isConfigured) {
-    return;
-  }
-
-  if (typeof google === "undefined") {
-    console.warn("구글 SDK를 불러오지 못했습니다.");
-    return;
-  }
-
-  try {
-    // 구글 로그인 버튼을 위한 이벤트 핸들러 추가
-    const googleLoginButton = document.querySelector("[data-google-auth]");
-    if (googleLoginButton) {
-      googleLoginButton.addEventListener("click", () => startGoogleAuth());
-    }
-  } catch (error) {
-    console.error("구글 로그인 초기화 오류:", error);
-  }
-}
+// Google login removed: app now supports Naver-only auth.
 
 async function startNaverAuth() {
   const config = window.NAVER_LOGIN_CONFIG || {};
@@ -587,19 +429,13 @@ function initNaverLogin() {
 
 window.addEventListener("message", (event) => {
   if (window.location.protocol !== "file:" && event.origin !== window.location.origin) return;
-  if (event.data?.type === "MS_LOGIN_SUCCESS") {
-    updateAuthStatus(event.data.profile);
-  } else if (event.data?.type === "GOOGLE_LOGIN_SUCCESS") {
-    updateAuthStatus(event.data.profile);
-  } else if (event.data?.type === "NAVER_LOGIN_SUCCESS") {
+  if (event.data?.type === "NAVER_LOGIN_SUCCESS") {
     updateAuthStatus(event.data.profile);
   }
 });
 
 setSelectedField(selectedFieldKey);
 window.addEventListener("load", async () => {
-  initMicrosoftLogin();
-  initGoogleLogin();
   initNaverLogin();
   
   // 초기 문서 로드
