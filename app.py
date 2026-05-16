@@ -70,6 +70,12 @@ def naver_callback():
     return send_project_file("naver-callback.html")
 
 
+@app.get("/naver-start")
+@app.get("/naver-start.html")
+def naver_start():
+    return send_project_file("naver-start.html")
+
+
 @app.get("/styles.css")
 def styles():
     return send_project_file("styles.css")

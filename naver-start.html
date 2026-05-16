@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CANJIA 네이버 로그인</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://static.nid.naver.com/js/naverLogin_implicit-1.0.3.js" charset="utf-8"></script>
+  <script src="naver-config.js"></script>
+</head>
+<body class="callback-page naver-start-page">
+  <main class="callback-card">
+    <span class="brand-mark">N</span>
+    <h1>네이버로 계속하기</h1>
+    <p>아래 버튼을 누르면 네이버 로그인 창이 열립니다. 로그인 후 이 창은 자동으로 닫힙니다.</p>
+    <div id="naver_id_login"></div>
+  </main>
+
+  <script>
+    const config = window.NAVER_LOGIN_CONFIG || {};
+    const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
+
+    if (!isConfigured || typeof naver_id_login === "undefined") {
+      document.querySelector("p").textContent =
+        "naver-config.js에 Client ID를 설정한 뒤 다시 시도해 주세요.";
+    } else {
+      const naverLogin = new naver_id_login(config.clientId, config.callbackUrl);
+      const state = naverLogin.getUniqState();
+      naverLogin.setButton("white", 2, 40);
+      naverLogin.setDomain(config.serviceUrl.replace(/\/$/, ""));
+      naverLogin.setState(state);
+      naverLogin.setPopup();
+      naverLogin.init_naver_id_login();
+    }
+  </script>
+</body>
+</html>

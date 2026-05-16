@@ -638,6 +638,19 @@ h3 {
   pointer-events: none;
 }
 
+/* 네이버 SDK 로그인 버튼 노출 (naver-start.html) */
+body.naver-start-page #naver_id_login {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  opacity: 1;
+  pointer-events: auto;
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
 .join-form {
   padding: 24px;
   box-shadow: var(--shadow);

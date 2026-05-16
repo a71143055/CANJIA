@@ -370,7 +370,7 @@ profileForm?.addEventListener("submit", (event) => {
 function updateAuthStatus(profile) {
   if (!profile) return;
 
-  const displayName = profile.name || profile.email || "사용자";
+  const displayName = profile.nickname || profile.name || profile.email || "사용자";
   setStatus(authStatuses, `✅ ${displayName}님, 로그인되었습니다.`);
 }
 
@@ -390,7 +390,12 @@ async function startNaverAuth() {
   setStatus(authStatuses, "🔄 네이버 로그인을 시작합니다...");
 
   try {
-    window.open("naver-callback.html", "naver-login", "width=600,height=700");
+    const startPath = "naver-start.html";
+    const startUrl =
+      window.location.protocol === "file:"
+        ? startPath
+        : new URL(startPath, window.location.href).href;
+    window.open(startUrl, "naver-login", "width=480,height=640");
   } catch (error) {
     console.error("네이버 로그인 오류:", error);
     setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
@@ -430,7 +435,15 @@ function initNaverLogin() {
 window.addEventListener("message", (event) => {
   if (window.location.protocol !== "file:" && event.origin !== window.location.origin) return;
   if (event.data?.type === "NAVER_LOGIN_SUCCESS") {
-    updateAuthStatus(event.data.profile);
+    const profile = event.data.profile;
+    if (profile) {
+      try {
+        localStorage.setItem(NAVER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      } catch {
+        /* ignore quota / privacy mode */
+      }
+    }
+    updateAuthStatus(profile);
   }
 });
 

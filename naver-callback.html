@@ -64,7 +64,25 @@
 
         if (window.opener) {
           const targetOrigin = window.location.protocol === "file:" ? "*" : window.location.origin;
-          window.opener.postMessage({ type: "NAVER_LOGIN_SUCCESS", profile }, targetOrigin);
+          const payload = { type: "NAVER_LOGIN_SUCCESS", profile };
+          // OAuth가 중첩 팝업이면 최상단(메인) 창까지 전달합니다.
+          const visited = new Set();
+          let w = window;
+          for (let i = 0; i < 10; i++) {
+            const parentWin = w.opener;
+            if (!parentWin || parentWin.closed || visited.has(parentWin)) break;
+            visited.add(parentWin);
+            try {
+              parentWin.postMessage(payload, targetOrigin);
+            } catch {
+              try {
+                parentWin.postMessage(payload, "*");
+              } catch (_) {
+                break;
+              }
+            }
+            w = parentWin;
+          }
           message.textContent = "로그인이 완료되었습니다. 창을 닫는 중입니다.";
           window.close();
           return;
