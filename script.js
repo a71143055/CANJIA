@@ -390,6 +390,20 @@ async function startNaverAuth() {
   setStatus(authStatuses, "🔄 네이버 로그인을 시작합니다...");
 
   try {
+    if (window.location.protocol !== "file:") {
+      const availRes = await fetch(`${API_BASE}/api/auth/naver/available`, {
+        credentials: "same-origin"
+      });
+      if (availRes.ok) {
+        const { available } = await availRes.json();
+        if (available) {
+          const startUrl = new URL("/api/auth/naver/start", API_BASE).href;
+          window.open(startUrl, "naver-login", "width=480,height=640");
+          return;
+        }
+      }
+    }
+
     const startPath = "naver-start.html";
     const startUrl =
       window.location.protocol === "file:"

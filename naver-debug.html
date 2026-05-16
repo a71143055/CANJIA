@@ -159,10 +159,14 @@
           <strong>서비스 URL:</strong> <code>http://localhost:5000</code>
         </li>
         <li>
-          <strong>Callback URL:</strong> <code>http://localhost:5000/naver-callback.html</code> (인증 완료 후 돌아오는 주소)
+          <strong>Callback URL (서버 플로, 권장):</strong> <code>http://localhost:5000/api/auth/naver/callback</code>
+          — 등록 문자열과 정확히 일치해야 하며, <code>naver_credentials.json</code> 또는 환경 변수에 Client Secret이 있어야 합니다.
         </li>
         <li>
-          <strong>로그인 시작 페이지:</strong> 메인 앱은 <code>/naver-start.html</code>에서 SDK를 초기화합니다. 직접 테스트: <code>http://localhost:5000/naver-start.html</code>
+          <strong>Callback URL (구형 JS만):</strong> <code>http://localhost:5000/naver-callback.html</code>
+        </li>
+        <li>
+          <strong>로그인 시작:</strong> 권장 경로는 <code>http://localhost:5000/api/auth/naver/start</code> (서버 플로, Client Secret 필요). 폴백은 <code>/naver-start.html</code>.
         </li>
         <li>
           <strong>Client ID 복사</strong>후 아래에 입력

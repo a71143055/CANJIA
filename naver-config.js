@@ -6,7 +6,9 @@
  * 2. 로그인 후 "Application" 메뉴 > "애플리케이션 등록"
  * 3. 사용 API: Naver ID Login · 환경: PC 웹
  * 4. 서비스 URL: 로컬에서는 http://localhost:5000 (127.0.0.1로 접속 시에도 여기에는 localhost 로 등록·일치시키는 것을 권장)
- * 5. Callback URL: http://localhost:5000/naver-callback.html (문자 하나라도 등록값과 동일해야 함)
+ * 5. Callback URL (둘 다 등록 가능):
+ *    - 권장(서버 OAuth): http://localhost:5000/api/auth/naver/callback
+ *    - 구형(JS SDK만): http://localhost:5000/naver-callback.html
  * 6. Client ID를 아래에 입력
  */
 
