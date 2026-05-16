@@ -382,6 +382,8 @@ async function startNaverAuth() {
   const config = window.NAVER_LOGIN_CONFIG || {};
   const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
 
+  console.log("[startNaverAuth] Starting naver auth", { isConfigured, config });
+
   if (!isConfigured) {
     alert("⚠️ 네이버 Client ID가 설정되지 않았습니다.\n\nnaver-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://developers.naver.com 방문\n2. 로그인 후 'Application' > '애플리케이션 등록'\n3. 사용 API: Naver ID Login 선택\n4. Callback URL: http://localhost:5000/naver-callback.html\n5. 받은 Client ID를 naver-config.js에 입력");
     return;
@@ -390,28 +392,38 @@ async function startNaverAuth() {
   setStatus(authStatuses, "🔄 네이버 로그인을 시작합니다...");
 
   try {
+    // 먼저 서버 기반 로그인 가능 여부 확인
     if (window.location.protocol !== "file:") {
-      const availRes = await fetch(`${API_BASE}/api/auth/naver/available`, {
-        credentials: "same-origin"
-      });
-      if (availRes.ok) {
-        const { available } = await availRes.json();
-        if (available) {
-          const startUrl = new URL("/api/auth/naver/start", API_BASE).href;
-          window.open(startUrl, "naver-login", "width=480,height=640");
-          return;
+      try {
+        const availRes = await fetch(`${API_BASE}/api/auth/naver/available`, {
+          credentials: "same-origin"
+        });
+        if (availRes.ok) {
+          const { available } = await availRes.json();
+          console.log("[startNaverAuth] Server OAuth available:", available);
+          if (available) {
+            const startUrl = new URL("/api/auth/naver/start", API_BASE).href;
+            console.log("[startNaverAuth] Opening server OAuth URL:", startUrl);
+            window.open(startUrl, "naver-login", "width=480,height=640");
+            return;
+          }
         }
+      } catch (e) {
+        console.warn("[startNaverAuth] Server OAuth check failed:", e);
       }
     }
 
+    // 폴백: 클라이언트 사이드 로그인
+    console.log("[startNaverAuth] Using client-side login");
     const startPath = "naver-start.html";
     const startUrl =
       window.location.protocol === "file:"
         ? startPath
         : new URL(startPath, window.location.href).href;
+    console.log("[startNaverAuth] Opening client-side URL:", startUrl);
     window.open(startUrl, "naver-login", "width=480,height=640");
   } catch (error) {
-    console.error("네이버 로그인 오류:", error);
+    console.error("[startNaverAuth] Error:", error);
     setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
   }
 }
@@ -421,28 +433,48 @@ function initNaverLogin() {
   const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
   const storedProfile = localStorage.getItem(NAVER_PROFILE_STORAGE_KEY);
 
+  console.log("[Naver Login] Config:", config);
+  console.log("[Naver Login] Is Configured:", isConfigured);
+
   if (storedProfile) {
     try {
-      updateAuthStatus(JSON.parse(storedProfile));
+      const profile = JSON.parse(storedProfile);
+      console.log("[Naver Login] Restoring profile:", profile);
+      updateAuthStatus(profile);
     } catch {
       localStorage.removeItem(NAVER_PROFILE_STORAGE_KEY);
     }
   }
 
-  if (!authStatuses.length) return;
+  if (!authStatuses.length) {
+    console.warn("[Naver Login] No auth-status elements found");
+    return;
+  }
 
   if (!isConfigured) {
+    console.warn("[Naver Login] Client ID not configured");
+    setStatus(authStatuses, "⚠️ 네이버 Client ID를 설정해주세요.");
     return;
   }
 
   try {
-    // 네이버 로그인 버튼을 위한 이벤트 핸들러 추가
-    const naverLoginButton = document.querySelector("[data-naver-auth]");
-    if (naverLoginButton) {
-      naverLoginButton.addEventListener("click", () => startNaverAuth());
+    // 모든 네이버 로그인 버튼에 이벤트 핸들러 추가
+    const naverLoginButtons = document.querySelectorAll("[data-naver-auth]");
+    console.log("[Naver Login] Found buttons:", naverLoginButtons.length);
+    if (naverLoginButtons.length > 0) {
+      naverLoginButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          console.log("[Naver Login] Button clicked");
+          startNaverAuth();
+        });
+      });
+      setStatus(authStatuses, "✅ 네이버 로그인 준비 완료");
+    } else {
+      console.warn("[Naver Login] No naver-auth buttons found");
     }
   } catch (error) {
     console.error("네이버 로그인 초기화 오류:", error);
+    setStatus(authStatuses, `❌ 로그인 초기화 실패: ${error.message}`);
   }
 }
 

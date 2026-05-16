@@ -17,28 +17,50 @@
     <h1>네이버로 계속하기</h1>
     <p>아래 버튼을 누르면 네이버 로그인 페이지로 이동합니다. 로그인이 끝나면 이 창으로 돌아옵니다.</p>
     <div id="naver_id_login"></div>
+    <p id="status-message" style="margin-top: 1em; font-size: 0.9em; color: #666;"></p>
   </main>
 
   <script>
+    console.log("[Naver Start] Page loaded");
+    
     const config = window.NAVER_LOGIN_CONFIG || {};
+    const statusEl = document.querySelector("#status-message");
+    
+    console.log("[Naver Start] Config:", config);
+    
     const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
 
-    if (!isConfigured || typeof naver_id_login === "undefined") {
-      document.querySelector("p").textContent =
-        "naver-config.js에 Client ID를 설정한 뒤 다시 시도해 주세요.";
+    if (!isConfigured) {
+      statusEl.textContent = "❌ naver-config.js에 Client ID를 설정한 뒤 다시 시도해 주세요.";
+      console.warn("[Naver Start] Client ID not configured");
+    } else if (typeof naver_id_login === "undefined") {
+      statusEl.textContent = "❌ 네이버 SDK를 로드하지 못했습니다. 인터넷 연결을 확인해 주세요.";
+      console.warn("[Naver Start] naver_id_login SDK not found");
     } else {
-      const naverLogin = new naver_id_login(config.clientId, config.callbackUrl);
-      const state = naverLogin.getUniqState();
-      naverLogin.setButton("white", 2, 40);
-      naverLogin.setState(state);
-      // setDomain 은 "http://..." 가 아니라 쿠키 도메인(예: .example.com) 전용. localhost/단일 호스트에서는 호출하지 않음.
-      const host = window.location.hostname;
-      const parts = host.split(".");
-      if (host !== "localhost" && host !== "127.0.0.1" && parts.length >= 3) {
-        naverLogin.setDomain("." + parts.slice(-2).join("."));
+      console.log("[Naver Start] Initializing naver_id_login SDK");
+      try {
+        const naverLogin = new naver_id_login(config.clientId, config.callbackUrl);
+        const state = naverLogin.getUniqState();
+        console.log("[Naver Start] State:", state);
+        
+        naverLogin.setButton("white", 2, 40);
+        naverLogin.setState(state);
+        
+        // setDomain 은 "http://..." 가 아니라 쿠키 도메인(예: .example.com) 전용. localhost/단일 호스트에서는 호출하지 않음.
+        const host = window.location.hostname;
+        const parts = host.split(".");
+        if (host !== "localhost" && host !== "127.0.0.1" && parts.length >= 3) {
+          naverLogin.setDomain("." + parts.slice(-2).join("."));
+        }
+        
+        // setPopup 제거: 보조 팝업마다 쿠키 컨텍스트가 달라져 상태 검증 실패(서비스 오류)가 나기 쉬움. 이 창에서 리다이렉트로 인증.
+        naverLogin.init_naver_id_login();
+        console.log("[Naver Start] SDK initialized successfully");
+        statusEl.textContent = "✅ 로그인 버튼을 클릭해주세요.";
+      } catch (error) {
+        console.error("[Naver Start] Initialization error:", error);
+        statusEl.textContent = "❌ 네이버 SDK 초기화 오류: " + error.message;
       }
-      // setPopup 제거: 보조 팝업마다 쿠키 컨텍스트가 달라져 상태 검증 실패(서비스 오류)가 나기 쉬움. 이 창에서 리다이렉트로 인증.
-      naverLogin.init_naver_id_login();
     }
   </script>
 </body>
