@@ -1,503 +1,345 @@
-const fieldData = {
-  agi: {
-    label: "AGI",
-    title: "AGI[범용 인공 지능]",
-    description: "사람의 수준에 맞고 사람의 활동 및 외관을 본따서 만든 인공지능입니다.",
-    domain: "발전의 영역",
-    goal: "기술 증진 · 생명 연장 · 우주 유영"
-  },
-  actf: {
-    label: "ACTF",
-    title: "ACTF[안드로이드 사이보그 트랜스포머]",
-    description: "영화 트랜스포머의 상상력을 AGI 기준에 따라 구현하려는 기술 방향입니다.",
-    domain: "발전의 영역",
-    goal: "기술 증진 · 생명 연장 · 우주 유영"
-  },
-  swimming: {
-    label: "수영",
-    title: "수영",
-    description: "수영장을 무중력 환경을 간접 체험하는 훈련장으로 바라보는 스포츠 활동입니다.",
-    domain: "네트워크 방면",
-    goal: "취미 생활 · 신체 적응 · 회원 모집"
-  },
-  skydiving: {
-    label: "스카이 다이빙",
-    title: "스카이 다이빙",
-    description: "하늘에서 중력을 활용해 활강하며 중력 환경에 적응하는 스포츠입니다.",
-    domain: "네트워크 방면",
-    goal: "취미 생활 · 중력 적응 · 우주 유영"
-  },
-  climbing: {
-    label: "암벽 등반",
-    title: "암벽 등반",
-    description: "중력을 거슬러 구조물을 오르며 체력, 집중력, 도전 감각을 기르는 활동입니다.",
-    domain: "네트워크 방면",
-    goal: "취미 생활 · 신체 강화 · 회원 모집"
-  },
-  cafe: {
-    label: "카페 취업",
-    title: "카페 취업",
-    description: "제주도 카페를 방문하고 경제 활동 여건을 탐색하는 현실적 자립 단계입니다.",
-    domain: "네트워크 방면",
-    goal: "경제 자립 · 주거 이전 · 회원 모집"
-  },
-  barista: {
-    label: "기술 연마",
-    title: "기술 연마",
-    description: "카페 창업 도전을 염두에 두고 바리스타 기술을 직접 확보하는 과정입니다.",
-    domain: "네트워크 방면",
-    goal: "경제 자립 · 기술 증진 · 주거 이전"
-  }
-};
+// Current user storage key
+const USER_STORAGE_KEY = "canjia_naver_profile";
 
-const defaultDocs = [
-  {
-    id: "seed-agi",
-    field: "agi",
-    author: "정구영",
-    title: "CANJIA AGI 연구 메모",
-    summary: "사람의 활동과 외관을 기준으로 삼는 범용 인공지능 연구 방향.",
-    body: "AGI는 제주 산업 발전의 장기 기술 축이다. 사람의 활동을 돕고 외관과 상호작용 방식까지 고려하는 인공지능을 목표로 한다.",
-    date: "2026-05-15"
-  },
-  {
-    id: "seed-cafe",
-    field: "cafe",
-    author: "정구영",
-    title: "제주 카페 탐색 기록",
-    summary: "카페 취업과 주거 이전 가능성을 함께 검토하는 경제 자립 문서.",
-    body: "카페 방문, 근무 조건, 이동 동선, 기술 연마 가능성을 함께 기록한다. 취업은 CANJIA 네트워크를 현실에서 시작하는 첫 단계다.",
-    date: "2026-05-15"
-  }
-];
-
-const DOC_STORAGE_KEY = "canjia_documents";
-const NAVER_PROFILE_STORAGE_KEY = "canjia_naver_profile";
-
-const API_BASE = (() => {
-  // 개발 환경에서는 file:// 프로토콜 또는 localhost 사용
-  if (window.location.protocol === "file:") {
-    return "http://localhost:5000";
-  }
-  return window.location.origin;
-})();
-
-async function fetchDocuments(field = null) {
-  try {
-    const url = new URL("/api/documents", API_BASE);
-    if (field) url.searchParams.append("field", field);
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("문서 조회 실패");
-    
-    return await response.json();
-  } catch (error) {
-    console.error("API 오류:", error);
-    return [];
-  }
-}
-
-async function saveDocument(docData) {
-  try {
-    const response = await fetch(`${API_BASE}/api/documents`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(docData)
-    });
-    
-    if (!response.ok) throw new Error("문서 저장 실패");
-    
-    return await response.json();
-  } catch (error) {
-    console.error("API 오류:", error);
-    throw error;
-  }
-}
-
-async function deleteDocument(docId) {
-  try {
-    const response = await fetch(`${API_BASE}/api/documents/${docId}`, {
-      method: "DELETE"
-    });
-    
-    if (!response.ok) throw new Error("문서 삭제 실패");
-    
-    return await response.json();
-  } catch (error) {
-    console.error("API 오류:", error);
-    throw error;
-  }
-}
-
-async function saveProfile(profileData) {
-  try {
-    const response = await fetch(`${API_BASE}/api/profiles`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profileData)
-    });
-    
-    if (!response.ok) throw new Error("프로필 저장 실패");
-    
-    return await response.json();
-  } catch (error) {
-    console.error("API 오류:", error);
-    throw error;
-  }
-}
-
-const fieldTabs = document.querySelectorAll("[data-field-target]");
-const selectedKicker = document.querySelector("#selected-kicker");
-const selectedTitle = document.querySelector("#workspace-title");
-const selectedDescription = document.querySelector("#selected-description");
-const selectedDomain = document.querySelector("#selected-domain");
-const selectedGoal = document.querySelector("#selected-goal");
-const docList = document.querySelector("#doc-list");
-const docCount = document.querySelector("#doc-count");
-const docForm = document.querySelector("#doc-form");
-const docField = document.querySelector("#doc-field");
-const docAuthor = document.querySelector("#doc-author");
-const docTitle = document.querySelector("#doc-title");
-const docSummary = document.querySelector("#doc-summary");
-const docBody = document.querySelector("#doc-body");
-const docNote = document.querySelector("#doc-note");
-const newDocButton = document.querySelector("#new-doc");
-const shareDocButton = document.querySelector("#share-doc");
-const profileForm = document.querySelector(".join-form");
-const profileNote = document.querySelector(".form-note");
-const authStatuses = document.querySelectorAll(".auth-status");
-const authButtons = document.querySelectorAll("[data-naver-auth]");
-
-let documents = [];
-let selectedFieldKey = "agi";
-let editingDocId = "";
-
-async function loadDocuments() {
-  try {
-    const allDocs = await fetchDocuments();
-    return allDocs.length > 0 ? allDocs : [...defaultDocs];
-  } catch {
-    return [...defaultDocs];
-  }
-}
-
-function setStatus(elements, message) {
-  elements.forEach((element) => {
-    element.textContent = message;
-  });
-}
-
-function setSelectedField(fieldKey) {
-  const field = fieldData[fieldKey] || fieldData.agi;
-  selectedFieldKey = fieldKey;
-
-  fieldTabs.forEach((tab) => {
-    const isActive = tab.dataset.fieldTarget === fieldKey;
-    tab.classList.toggle("active", isActive);
-    tab.setAttribute("aria-selected", String(isActive));
-  });
-
-  if (selectedKicker) selectedKicker.textContent = field.label;
-  if (selectedTitle) selectedTitle.textContent = field.title;
-  if (selectedDescription) selectedDescription.textContent = field.description;
-  if (selectedDomain) selectedDomain.textContent = field.domain;
-  if (selectedGoal) selectedGoal.textContent = field.goal;
-  if (docField) docField.value = fieldKey;
-
-  renderDocuments();
-}
-
-function renderDocuments() {
-  if (!docList || !docCount) return;
-
-  const fieldDocs = documents.filter((doc) => doc.field === selectedFieldKey);
-  docCount.textContent = `${fieldDocs.length}개`;
-  docList.innerHTML = "";
-
-  if (!fieldDocs.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = `${fieldData[selectedFieldKey].label} 분야에 등록된 문서가 아직 없습니다.`;
-    docList.append(empty);
-    return;
-  }
-
-  fieldDocs.forEach((doc) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "doc-card";
-    card.classList.toggle("active", doc.id === editingDocId);
-
-    const meta = document.createElement("span");
-    meta.textContent = `${doc.author} · ${doc.date}`;
-
-    const title = document.createElement("strong");
-    title.textContent = doc.title;
-
-    const summary = document.createElement("p");
-    summary.textContent = doc.summary || "요약이 비어 있습니다.";
-
-    card.append(meta, title, summary);
-    card.addEventListener("click", () => loadDocumentIntoEditor(doc.id));
-    docList.append(card);
-  });
-}
-
-function loadDocumentIntoEditor(docId) {
-  const doc = documents.find((item) => item.id === docId);
-  if (!doc) return;
-
-  editingDocId = doc.id;
-  docField.value = doc.field;
-  docAuthor.value = doc.author;
-  docTitle.value = doc.title;
-  docSummary.value = doc.summary;
-  docBody.value = doc.body;
-  setSelectedField(doc.field);
-  docNote.textContent = `"${doc.title}" 문서를 불러왔습니다.`;
-}
-
-function resetEditor(fieldKey = selectedFieldKey) {
-  editingDocId = "";
-  docForm.reset();
-  docField.value = fieldKey;
-  docAuthor.value = "정구영";
-  docNote.textContent = "새 문서를 작성할 수 있습니다.";
-  renderDocuments();
-}
-
-function createDocumentFromForm() {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const payload = {
-    id: editingDocId || `doc-${now.getTime()}`,
-    field: docField.value,
-    author: docAuthor.value.trim() || "작성자",
-    title: docTitle.value.trim(),
-    summary: docSummary.value.trim(),
-    body: docBody.value.trim(),
-    date
-  };
-
-  saveDocument(payload).then(() => {
-    editingDocId = payload.id;
-    // 문서 목록 새로고침
-    loadDocuments().then((docs) => {
-      documents = docs;
-      setSelectedField(payload.field);
-      docNote.textContent = `"${payload.title}" 문서가 등록되었습니다.`;
-    });
-  }).catch(() => {
-    docNote.textContent = "문서 저장에 실패했습니다.";
-  });
-}
-
-async function shareCurrentDocument() {
-  const title = docTitle.value.trim();
-  const field = fieldData[docField.value]?.label || "CANJIA";
-  const summary = docSummary.value.trim() || docBody.value.trim().slice(0, 80);
-
-  if (!title) {
-    docNote.textContent = "공유할 문서 제목을 먼저 입력해 주세요.";
-    return;
-  }
-
-  const shareText = `[CANJIA/${field}] ${title} - ${summary}`;
-
-  try {
-    await navigator.clipboard.writeText(shareText);
-    docNote.textContent = "공유 문구를 클립보드에 복사했습니다.";
-  } catch {
-    docNote.textContent = shareText;
-  }
-}
-
-fieldTabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    setSelectedField(tab.dataset.fieldTarget);
-    document.querySelector("#documents")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserSession();
+    setupEventListeners();
+    loadDocuments();
+    loadProfiles();
 });
 
-docField?.addEventListener("change", () => setSelectedField(docField.value));
-
-docForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  if (!docTitle.value.trim()) {
-    docNote.textContent = "문서 제목을 입력해 주세요.";
-    return;
-  }
-
-  createDocumentFromForm();
-});
-
-newDocButton?.addEventListener("click", () => resetEditor());
-shareDocButton?.addEventListener("click", shareCurrentDocument);
-
-profileForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  const data = new FormData(profileForm);
-  const name = data.get("name")?.toString().trim() || "참여자";
-  const interest = data.get("interest")?.toString().trim();
-
-  if (!interest) {
-    profileNote.textContent = "관심 분야를 선택해 주세요.";
-    return;
-  }
-
-  // 네이버 프로필 정보 함께 저장
-  const storedProfile = localStorage.getItem(NAVER_PROFILE_STORAGE_KEY);
-  const naverProfile = storedProfile ? JSON.parse(storedProfile) : {};
-  
-  const profilePayload = {
-    email: naverProfile.email || `user-${Date.now()}@canjia.local`,
-    name: name,
-    nickname: naverProfile.nickname || name,
-    profileImage: naverProfile.profileImage || "",
-    interest: interest,
-    joined: new Date().toISOString()
-  };
-
-  saveProfile(profilePayload).then(() => {
-    profileNote.textContent = `${name}님의 프로필이 저장되었습니다.`;
-  }).catch(() => {
-    profileNote.textContent = "프로필 저장에 실패했습니다.";
-  });
-});
-
-function updateAuthStatus(profile) {
-  if (!profile) return;
-
-  const displayName = profile.nickname || profile.name || profile.email || "사용자";
-  setStatus(authStatuses, `✅ ${displayName}님, 로그인되었습니다.`);
-}
-
-// Microsoft login removed: app now supports Naver-only auth.
-
-// Google login removed: app now supports Naver-only auth.
-
-async function startNaverAuth() {
-  const config = window.NAVER_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
-
-  console.log("[startNaverAuth] Starting naver auth", { isConfigured, config });
-
-  if (!isConfigured) {
-    alert("⚠️ 네이버 Client ID가 설정되지 않았습니다.\n\nnaver-config.js 파일을 열어 다음 단계를 따르세요:\n\n1. https://developers.naver.com 방문\n2. 로그인 후 'Application' > '애플리케이션 등록'\n3. 사용 API: Naver ID Login 선택\n4. Callback URL: http://localhost:5000/naver-callback.html\n5. 받은 Client ID를 naver-config.js에 입력");
-    return;
-  }
-
-  setStatus(authStatuses, "🔄 네이버 로그인을 시작합니다...");
-
-  try {
-    // 먼저 서버 기반 로그인 가능 여부 확인
-    if (window.location.protocol !== "file:") {
-      try {
-        const availRes = await fetch(`${API_BASE}/api/auth/naver/available`, {
-          credentials: "same-origin"
-        });
-        if (availRes.ok) {
-          const { available } = await availRes.json();
-          console.log("[startNaverAuth] Server OAuth available:", available);
-          if (available) {
-            const startUrl = new URL("/api/auth/naver/start", API_BASE).href;
-            console.log("[startNaverAuth] Opening server OAuth URL:", startUrl);
-            window.open(startUrl, "naver-login", "width=480,height=640");
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn("[startNaverAuth] Server OAuth check failed:", e);
-      }
+// Setup event listeners
+function setupEventListeners() {
+    // Naver login button
+    const navberLoginBtn = document.getElementById('naver-login-btn');
+    if (navberLoginBtn) {
+        navberLoginBtn.addEventListener('click', initiateNaverLogin);
     }
 
-    // 폴백: 클라이언트 사이드 로그인
-    console.log("[startNaverAuth] Using client-side login");
-    const startPath = "naver-start.html";
-    const startUrl =
-      window.location.protocol === "file:"
-        ? startPath
-        : new URL(startPath, window.location.href).href;
-    console.log("[startNaverAuth] Opening client-side URL:", startUrl);
-    window.open(startUrl, "naver-login", "width=480,height=640");
-  } catch (error) {
-    console.error("[startNaverAuth] Error:", error);
-    setStatus(authStatuses, `❌ 로그인 실패: ${error.message}`);
-  }
+    // Logout button
+    const logoutBtn = document.getElementById('logout-button');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+
+    // Document form
+    const docForm = document.getElementById('document-form');
+    if (docForm) {
+        docForm.addEventListener('submit', handleDocumentSubmit);
+    }
+
+    // Profile form
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', handleProfileSubmit);
+    }
+
+    // Listen for messages from Naver callback window
+    window.addEventListener('message', handleNaverMessage);
 }
 
-function initNaverLogin() {
-  const config = window.NAVER_LOGIN_CONFIG || {};
-  const isConfigured = config.clientId && config.clientId !== "YOUR_NAVER_CLIENT_ID";
-  const storedProfile = localStorage.getItem(NAVER_PROFILE_STORAGE_KEY);
-
-  console.log("[Naver Login] Config:", config);
-  console.log("[Naver Login] Is Configured:", isConfigured);
-
-  if (storedProfile) {
-    try {
-      const profile = JSON.parse(storedProfile);
-      console.log("[Naver Login] Restoring profile:", profile);
-      updateAuthStatus(profile);
-    } catch {
-      localStorage.removeItem(NAVER_PROFILE_STORAGE_KEY);
+// Initiate Naver OAuth flow
+function initiateNaverLogin() {
+    const clientId = NAVER_CONFIG.CLIENT_ID;
+    if (clientId === "YOUR_NAVER_CLIENT_ID") {
+        alert("네이버 Client ID를 설정해주세요. naver-config.js에서 CLIENT_ID를 수정하세요.");
+        return;
     }
-  }
 
-  if (!authStatuses.length) {
-    console.warn("[Naver Login] No auth-status elements found");
-    return;
-  }
+    const redirectUri = NAVER_CONFIG.REDIRECT_URI;
+    const state = Math.random().toString(36).substring(7);
+    
+    // Store state for verification
+    sessionStorage.setItem('naver_oauth_state', state);
+    
+    // Open Naver OAuth authorization URL in popup
+    const authUrl = `https://nid.naver.com/oauth2.0/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&state=${state}`;
+    
+    window.open(authUrl, 'naver_oauth', 'width=500,height=600');
+}
 
-  if (!isConfigured) {
-    console.warn("[Naver Login] Client ID not configured");
-    setStatus(authStatuses, "⚠️ 네이버 Client ID를 설정해주세요.");
-    return;
-  }
+// Handle message from Naver callback window
+function handleNaverMessage(event) {
+    // Verify origin
+    if (event.origin !== window.location.origin) {
+        return;
+    }
 
-  try {
-    // 모든 네이버 로그인 버튼에 이벤트 핸들러 추가
-    const naverLoginButtons = document.querySelectorAll("[data-naver-auth]");
-    console.log("[Naver Login] Found buttons:", naverLoginButtons.length);
-    if (naverLoginButtons.length > 0) {
-      naverLoginButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          console.log("[Naver Login] Button clicked");
-          startNaverAuth();
-        });
-      });
-      setStatus(authStatuses, "✅ 네이버 로그인 준비 완료");
+    if (event.data.type === 'NAVER_LOGIN_SUCCESS') {
+        const profile = event.data.profile;
+        
+        // Save profile to localStorage
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(profile));
+        
+        // Update UI
+        showLoggedInUI(profile);
+        
+        // Load documents and profiles for this user
+        loadDocuments();
+        loadProfiles();
+        
+        console.log('네이버 로그인 성공:', profile.name);
+    } else if (event.data.type === 'NAVER_LOGIN_ERROR') {
+        alert('로그인 실패: ' + event.data.error);
+        console.error('Naver login error:', event.data.error);
+    }
+}
+
+// Load user session from localStorage
+function loadUserSession() {
+    const savedProfile = localStorage.getItem(USER_STORAGE_KEY);
+    if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        showLoggedInUI(profile);
     } else {
-      console.warn("[Naver Login] No naver-auth buttons found");
+        showLoginUI();
     }
-  } catch (error) {
-    console.error("네이버 로그인 초기화 오류:", error);
-    setStatus(authStatuses, `❌ 로그인 초기화 실패: ${error.message}`);
-  }
 }
 
-window.addEventListener("message", (event) => {
-  if (window.location.protocol !== "file:" && event.origin !== window.location.origin) return;
-  if (event.data?.type === "NAVER_LOGIN_SUCCESS") {
-    const profile = event.data.profile;
-    if (profile) {
-      try {
-        localStorage.setItem(NAVER_PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      } catch {
-        /* ignore quota / privacy mode */
-      }
-    }
-    updateAuthStatus(profile);
-  }
-});
+// Show login UI
+function showLoginUI() {
+    const loginSection = document.getElementById('login-section');
+    const profileInfo = document.getElementById('profile-info');
+    const workspace = document.getElementById('workspace');
+    
+    if (loginSection) loginSection.style.display = 'block';
+    if (profileInfo) profileInfo.style.display = 'none';
+    if (workspace) workspace.style.display = 'none';
+}
 
-setSelectedField(selectedFieldKey);
-window.addEventListener("load", async () => {
-  initNaverLogin();
-  
-  // 초기 문서 로드
-  documents = await loadDocuments();
-  setSelectedField(selectedFieldKey);
-});
+// Show logged in UI
+function showLoggedInUI(profile) {
+    const loginSection = document.getElementById('login-section');
+    const profileInfo = document.getElementById('profile-info');
+    const workspace = document.getElementById('workspace');
+    
+    // Update current user display
+    const currentUserSpan = document.getElementById('current-user');
+    if (currentUserSpan) {
+        currentUserSpan.textContent = profile.name || profile.nickname || profile.email;
+    }
+    
+    // Show/hide sections
+    if (loginSection) loginSection.style.display = 'none';
+    if (profileInfo) profileInfo.style.display = 'block';
+    if (workspace) workspace.style.display = 'block';
+}
+
+// Logout
+function logout() {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    showLoginUI();
+    document.getElementById('document-list').innerHTML = '';
+    document.getElementById('profile-list').innerHTML = '';
+    console.log('로그아웃 완료');
+}
+
+// Get current user
+function getCurrentUser() {
+    const savedProfile = localStorage.getItem(USER_STORAGE_KEY);
+    return savedProfile ? JSON.parse(savedProfile) : null;
+}
+
+// ===== DOCUMENT MANAGEMENT =====
+
+// Load documents
+function loadDocuments() {
+    const user = getCurrentUser();
+    if (!user) return;
+
+    fetch('/api/documents')
+        .then(response => response.json())
+        .then(data => {
+            const docList = document.getElementById('document-list');
+            if (!docList) return;
+
+            // Filter documents for current user
+            const userDocs = data.filter(doc => doc.user_id === user.id);
+
+            docList.innerHTML = '';
+            if (userDocs.length === 0) {
+                docList.innerHTML = '<p style="color: #666;">아직 추가된 문서가 없습니다.</p>';
+                return;
+            }
+
+            userDocs.forEach(doc => {
+                const docItem = document.createElement('div');
+                docItem.className = 'doc-item';
+                docItem.style.marginBottom = '10px';
+                docItem.innerHTML = `
+                    <strong>${doc.title}</strong> 
+                    <button onclick="deleteDocument('${doc.id}')" class="button secondary" style="margin-left: 10px;">삭제</button>
+                `;
+                docList.appendChild(docItem);
+            });
+        })
+        .catch(err => console.error('Failed to load documents:', err));
+}
+
+// Handle document form submission
+function handleDocumentSubmit(e) {
+    e.preventDefault();
+    
+    const user = getCurrentUser();
+    if (!user) {
+        alert('먼저 로그인해주세요');
+        return;
+    }
+
+    const formData = new FormData(e.target);
+    const title = formData.get('title');
+    const field = formData.get('field') || '';
+
+    if (!title.trim()) {
+        alert('문서 제목을 입력해주세요');
+        return;
+    }
+
+    const document = {
+        title: title,
+        field: field,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+    };
+
+    fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(document)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('문서 저장 실패: ' + data.error);
+        } else {
+            console.log('문서 저장 완료:', data);
+            e.target.reset();
+            loadDocuments();
+        }
+    })
+    .catch(err => {
+        console.error('Document save error:', err);
+        alert('문서 저장 중 오류 발생');
+    });
+}
+
+// Delete document
+function deleteDocument(docId) {
+    if (!confirm('정말로 삭제하시겠습니까?')) return;
+
+    fetch(`/api/documents?id=${docId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('삭제 실패: ' + data.error);
+        } else {
+            console.log('삭제 완료');
+            loadDocuments();
+        }
+    })
+    .catch(err => console.error('Delete error:', err));
+}
+
+// ===== PROFILE MANAGEMENT =====
+
+// Load profiles
+function loadProfiles() {
+    const user = getCurrentUser();
+    if (!user) return;
+
+    fetch('/api/profiles')
+        .then(response => response.json())
+        .then(data => {
+            const profileList = document.getElementById('profile-list');
+            if (!profileList) return;
+
+            // Filter profiles for current user
+            const userProfiles = data.filter(p => p.user_id === user.id);
+
+            profileList.innerHTML = '';
+            if (userProfiles.length === 0) {
+                profileList.innerHTML = '<p style="color: #666;">저장된 프로필이 없습니다.</p>';
+                return;
+            }
+
+            userProfiles.forEach(profile => {
+                const profileItem = document.createElement('div');
+                profileItem.className = 'profile-item';
+                profileItem.style.padding = '10px';
+                profileItem.style.border = '1px solid #ddd';
+                profileItem.style.marginBottom = '10px';
+                profileItem.style.borderRadius = '4px';
+                profileItem.innerHTML = `
+                    <p><strong>관심분야:</strong> ${profile.interests || '미입력'}</p>
+                    <p><strong>제주 계획:</strong> ${profile.plan || '미입력'}</p>
+                    <button onclick="deleteProfile('${profile.id}')" class="button secondary">삭제</button>
+                `;
+                profileList.appendChild(profileItem);
+            });
+        })
+        .catch(err => console.error('Failed to load profiles:', err));
+}
+
+// Handle profile form submission
+function handleProfileSubmit(e) {
+    e.preventDefault();
+
+    const user = getCurrentUser();
+    if (!user) {
+        alert('먼저 로그인해주세요');
+        return;
+    }
+
+    const formData = new FormData(e.target);
+    const interests = formData.get('interests') || '';
+    const plan = formData.get('plan') || '';
+
+    const profile = {
+        interests: interests,
+        plan: plan,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+    };
+
+    fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('프로필 저장 실패: ' + data.error);
+        } else {
+            console.log('프로필 저장 완료:', data);
+            e.target.reset();
+            loadProfiles();
+        }
+    })
+    .catch(err => {
+        console.error('Profile save error:', err);
+        alert('프로필 저장 중 오류 발생');
+    });
+}
+
+// Delete profile
+function deleteProfile(profileId) {
+    if (!confirm('정말로 삭제하시겠습니까?')) return;
+
+    fetch(`/api/profiles?id=${profileId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('삭제 실패: ' + data.error);
+        } else {
+            console.log('프로필 삭제 완료');
+            loadProfiles();
+        }
+    })
+    .catch(err => console.error('Delete error:', err));
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Naver Callback</title>
+</head>
+<body>
+    <p>Authenticating...</p>
+    <script>
+        // Extract token from URL hash
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        
+        const accessToken = params.get('access_token');
+        const error = params.get('error');
+        const errorDescription = params.get('error_description');
+        
+        if (error) {
+            // Auth failed
+            window.opener.postMessage({
+                type: 'NAVER_LOGIN_ERROR',
+                error: error,
+                error_description: errorDescription
+            }, window.location.origin);
+            window.close();
+        } else if (accessToken) {
+            // Get user profile using access token
+            fetch('https://openapi.naver.com/v1/nid/me', {
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.resultcode === '00') {
+                    const profile = data.response;
+                    window.opener.postMessage({
+                        type: 'NAVER_LOGIN_SUCCESS',
+                        profile: {
+                            id: profile.id,
+                            name: profile.name,
+                            email: profile.email,
+                            nickname: profile.nickname,
+                            profileImage: profile.profile_image,
+                            accessToken: accessToken
+                        }
+                    }, window.location.origin);
+                } else {
+                    window.opener.postMessage({
+                        type: 'NAVER_LOGIN_ERROR',
+                        error: 'Failed to get profile'
+                    }, window.location.origin);
+                }
+                window.close();
+            })
+            .catch(err => {
+                window.opener.postMessage({
+                    type: 'NAVER_LOGIN_ERROR',
+                    error: err.message
+                }, window.location.origin);
+                window.close();
+            });
+        } else {
+            window.opener.postMessage({
+                type: 'NAVER_LOGIN_ERROR',
+                error: 'No access token received'
+            }, window.location.origin);
+            window.close();
+        }
+    </script>
+</body>
+</html>
