@@ -99,27 +99,36 @@ def register_user():
 @app.post("/api/auth/login")
 def login_user():
     data = request.get_json(force=True, silent=True)
+    print(f"[LOGIN] raw data: {data}")
+
     if not data or "username" not in data or "password" not in data:
+        print(f"[LOGIN] 400 - data 없거나 필드 누락: {data}")
         return jsonify({"error": "username과 password가 필요합니다"}), 400
 
     username = data["username"].strip()
     password = data["password"].strip()
 
     if not username or not password:
+        print(f"[LOGIN] 400 - username/password 빈 값")
         return jsonify({"error": "username과 password를 입력해주세요"}), 400
 
     users = load_users()
+    print(f"[LOGIN] 등록된 사용자 목록: {list(users.keys())}")
+
     if username not in users:
+        print(f"[LOGIN] 400 - 미등록 사용자: {username}")
         return jsonify({"error": "등록되지 않은 사용자입니다"}), 400
 
     user_rec = users[username]
 
     if "password" not in user_rec:
+        print(f"[LOGIN] 400 - 비밀번호 필드 없음")
         return jsonify({
             "error": "이 계정은 비밀번호가 설정되지 않았습니다. 새 계정을 등록해주세요."
         }), 400
 
     if not bcrypt.verify(password, user_rec["password"]):
+        print(f"[LOGIN] 400 - 비밀번호 불일치")
         return jsonify({"error": "비밀번호가 올바르지 않습니다"}), 400
 
     session["login_username"] = username
