@@ -45,22 +45,131 @@ load_users      = lambda: load_json(USERS_FILE, {})
 save_users      = lambda d: save_json(USERS_FILE, d)
 
 
-# ===== 정적 파일 =====
+# ===== 인증 API =====  (정적 라우트보다 먼저 등록)
 
-@app.get("/")
-def serve_index():
-    return send_from_directory(BASE_DIR, "index.html")
+@app.post("/api/auth/register")
+def register_user():
+    data = request.get_json(force=True, silent=True)
+    if not data or "username" not in data or "password" not in data:
+        return jsonify({"error": "username과 password가 필요합니다"}), 400
 
-STATIC_FILES = {
-    "index.html", "script.js", "styles.css", "favicon.ico",
-    "naver-callback.html", "naver-config.js",
-}
+    username = data["username"].strip()
+    password = data["password"].strip()
 
-@app.get("/<filename>")
-def serve_static(filename):
-    if filename in STATIC_FILES:
-        return send_from_directory(BASE_DIR, filename)
-    return jsonify({"error": "Not found"}), 404
+    if not username or not password:
+        return jsonify({"error": "username과 password를 입력해주세요"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "비밀번호는 최소 6자 이상이어야 합니다"}), 400
+
+    users = load_users()
+    if username in users:
+        return jsonify({"error": "이미 등록된 사용자입니다"}), 400
+
+    hashed = bcrypt.hash(password)
+    secret = pyotp.random_base32()
+
+    totp = pyotp.TOTP(secret)
+    uri  = totp.provisioning_uri(name=username, issuer_name="CANJIA")
+
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(uri)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    qr_b64 = base64.b64encode(buf.getvalue()).decode()
+
+    users[username] = {
+        "password":   hashed,
+        "secret":     secret,
+        "created_at": datetime.now().isoformat(),
+    }
+    save_users(users)
+
+    return jsonify({
+        "success":  True,
+        "username": username,
+        "secret":   secret,
+        "qr_code":  f"data:image/png;base64,{qr_b64}",
+    }), 200
+
+
+@app.post("/api/auth/login")
+def login_user():
+    data = request.get_json(force=True, silent=True)
+    if not data or "username" not in data or "password" not in data:
+        return jsonify({"error": "username과 password가 필요합니다"}), 400
+
+    username = data["username"].strip()
+    password = data["password"].strip()
+
+    if not username or not password:
+        return jsonify({"error": "username과 password를 입력해주세요"}), 400
+
+    users = load_users()
+    if username not in users:
+        return jsonify({"error": "등록되지 않은 사용자입니다"}), 400
+
+    user_rec = users[username]
+
+    if "password" not in user_rec:
+        return jsonify({
+            "error": "이 계정은 비밀번호가 설정되지 않았습니다. 새 계정을 등록해주세요."
+        }), 400
+
+    if not bcrypt.verify(password, user_rec["password"]):
+        return jsonify({"error": "비밀번호가 올바르지 않습니다"}), 400
+
+    session["login_username"] = username
+    return jsonify({
+        "success":  True,
+        "username": username,
+        "message":  "1단계 로그인 성공 - 2단계 인증 필요",
+    }), 200
+
+
+@app.post("/api/auth/verify-2fa")
+def verify_2fa():
+    data = request.get_json(force=True, silent=True)
+    if not data or "code" not in data:
+        return jsonify({"error": "TOTP 코드가 필요합니다"}), 400
+
+    code = data["code"].strip()
+    if not code:
+        return jsonify({"error": "TOTP 코드를 입력해주세요"}), 400
+
+    if "login_username" not in session:
+        return jsonify({"error": "먼저 1단계 로그인을 완료해주세요"}), 400
+
+    username = session["login_username"]
+    users    = load_users()
+
+    if username not in users:
+        return jsonify({"error": "사용자를 찾을 수 없습니다"}), 400
+
+    secret = users[username]["secret"]
+    totp   = pyotp.TOTP(secret)
+
+    if totp.verify(code, valid_window=1):
+        session["authenticated"] = True
+        session["username"]      = username
+        session.pop("login_username", None)
+
+        return jsonify({
+            "success":  True,
+            "username": username,
+            "message":  "로그인 성공",
+        }), 200
+    else:
+        return jsonify({"success": False, "error": "인증 코드가 올바르지 않습니다"}), 400
+
+
+@app.post("/api/auth/logout")
+def logout_user():
+    session.clear()
+    return jsonify({"success": True}), 200
 
 
 # ===== 문서 API =====
@@ -71,7 +180,7 @@ def get_documents():
 
 @app.post("/api/documents")
 def create_document():
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     if not data or "title" not in data or "user_id" not in data:
         return jsonify({"error": "title과 user_id는 필수입니다"}), 400
 
@@ -114,7 +223,7 @@ def get_profiles():
 
 @app.post("/api/profiles")
 def create_profile():
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
     if not data or "user_id" not in data:
         return jsonify({"error": "user_id는 필수입니다"}), 400
 
@@ -149,133 +258,22 @@ def delete_profile():
     return jsonify({"success": True}), 200
 
 
-# ===== 인증 API =====
+# ===== 정적 파일 =====  (API 라우트보다 나중에 등록)
 
-@app.post("/api/auth/register")
-def register_user():
-    data = request.get_json()
-    if not data or "username" not in data or "password" not in data:
-        return jsonify({"error": "username과 password가 필요합니다"}), 400
+@app.get("/")
+def serve_index():
+    return send_from_directory(BASE_DIR, "index.html")
 
-    username = data["username"].strip()
-    password = data["password"].strip()
+STATIC_FILES = {
+    "index.html", "script.js", "styles.css", "favicon.ico",
+    "naver-callback.html", "naver-config.js", "naver-start.html",
+}
 
-    if not username or not password:
-        return jsonify({"error": "username과 password를 입력해주세요"}), 400
-    if len(password) < 6:
-        return jsonify({"error": "비밀번호는 최소 6자 이상이어야 합니다"}), 400
-
-    users = load_users()
-    if username in users:
-        return jsonify({"error": "이미 등록된 사용자입니다"}), 400
-
-    hashed = bcrypt.hash(password)
-    secret = pyotp.random_base32()
-
-    # QR 코드 생성
-    totp = pyotp.TOTP(secret)
-    uri  = totp.provisioning_uri(name=username, issuer_name="CANJIA")
-
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(uri)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    qr_b64 = base64.b64encode(buf.getvalue()).decode()
-
-    users[username] = {
-        "password":   hashed,
-        "secret":     secret,
-        "created_at": datetime.now().isoformat(),
-    }
-    save_users(users)
-
-    return jsonify({
-        "success":  True,
-        "username": username,
-        "secret":   secret,
-        "qr_code":  f"data:image/png;base64,{qr_b64}",
-    }), 200
-
-
-@app.post("/api/auth/login")
-def login_user():
-    data = request.get_json()
-    if not data or "username" not in data or "password" not in data:
-        return jsonify({"error": "username과 password가 필요합니다"}), 400
-
-    username = data["username"].strip()
-    password = data["password"].strip()
-
-    if not username or not password:
-        return jsonify({"error": "username과 password를 입력해주세요"}), 400
-
-    users = load_users()
-    if username not in users:
-        return jsonify({"error": "등록되지 않은 사용자입니다"}), 400
-
-    user_rec = users[username]
-
-    # 비밀번호 필드가 없는 구 계정 처리
-    if "password" not in user_rec:
-        return jsonify({
-            "error": "이 계정은 비밀번호가 설정되지 않았습니다. 새 계정을 등록해주세요."
-        }), 400
-
-    if not bcrypt.verify(password, user_rec["password"]):
-        return jsonify({"error": "비밀번호가 올바르지 않습니다"}), 400
-
-    session["login_username"] = username
-    return jsonify({
-        "success":  True,
-        "username": username,
-        "message":  "1단계 로그인 성공 - 2단계 인증 필요",
-    }), 200
-
-
-@app.post("/api/auth/verify-2fa")
-def verify_2fa():
-    data = request.get_json()
-    if not data or "code" not in data:
-        return jsonify({"error": "TOTP 코드가 필요합니다"}), 400
-
-    code = data["code"].strip()
-    if not code:
-        return jsonify({"error": "TOTP 코드를 입력해주세요"}), 400
-
-    if "login_username" not in session:
-        return jsonify({"error": "먼저 1단계 로그인을 완료해주세요"}), 400
-
-    username = session["login_username"]
-    users    = load_users()
-
-    if username not in users:
-        return jsonify({"error": "사용자를 찾을 수 없습니다"}), 400
-
-    secret = users[username]["secret"]
-    totp   = pyotp.TOTP(secret)
-
-    if totp.verify(code, valid_window=1):
-        session["authenticated"] = True
-        session["username"]      = username
-        session.pop("login_username", None)
-
-        return jsonify({
-            "success":  True,
-            "username": username,
-            "message":  "로그인 성공",
-        }), 200
-    else:
-        return jsonify({"success": False, "error": "인증 코드가 올바르지 않습니다"}), 400
-
-
-@app.post("/api/auth/logout")
-def logout_user():
-    session.clear()
-    return jsonify({"success": True}), 200
+@app.get("/<filename>")
+def serve_static(filename):
+    if filename in STATIC_FILES:
+        return send_from_directory(BASE_DIR, filename)
+    return jsonify({"error": "Not found"}), 404
 
 
 if __name__ == "__main__":
