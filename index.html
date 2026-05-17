@@ -147,45 +147,13 @@
         <p>
           CANJIA에 참여하려면 사용자명/비밀번호로 로그인 후 2단계 인증을 완료해주세요.
         </p>
-        
-        <!-- 2단계 로그인 -->
+
+        <!-- 인증 박스 -->
         <div id="login-section" class="auth-box">
-          <h3>로그인</h3>
-          
-          <!-- 사용자 등록 섹션 -->
-          <div id="register-section">
-            <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
-              새 사용자 등록 - 비밀번호와 Authenticator 앱 설정
-            </p>
-            <form id="register-form" class="simple-form">
-              <label>
-                사용자명
-                <input type="text" id="register-username" name="username" placeholder="사용자명을 입력하세요" required>
-              </label>
-              <label>
-                비밀번호
-                <input type="password" id="register-password" name="password" placeholder="비밀번호 (최소 6자)" minlength="6" required>
-              </label>
-              <button type="submit" class="button primary" style="width: 100%;">등록하기</button>
-              <p id="register-message" class="form-note" role="status" aria-live="polite"></p>
-            </form>
-            
-            <!-- QR 코드 표시 영역 -->
-            <div id="qr-section" style="display: none; margin-top: 1em; text-align: center;">
-              <p style="font-size: 0.9em; color: #666; margin-bottom: 0.5em;">
-                아래 QR 코드를 Authenticator 앱으로 스캔하세요:
-              </p>
-              <img id="qr-code" style="max-width: 200px; margin: 10px auto; display: block;" alt="QR Code">
-              <p style="font-size: 0.8em; color: #999; margin-top: 10px;">
-                또는 수동으로 비밀키를 입력하세요:
-              </p>
-              <code id="secret-key" style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 200px; word-break: break-all;"></code>
-              <button id="show-login-btn" class="button secondary" style="margin-top: 10px;">로그인 화면으로 이동</button>
-            </div>
-          </div>
-          
+
           <!-- 1단계 로그인 섹션 -->
           <div id="signin-section">
+            <h3>로그인</h3>
             <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
               사용자명과 비밀번호로 로그인하세요.
             </p>
@@ -201,11 +169,47 @@
               <button type="submit" class="button primary" style="width: 100%;">로그인</button>
               <p id="login-message" class="form-note" role="status" aria-live="polite"></p>
             </form>
-            <button id="show-register-btn" class="button secondary" style="margin-top: 10px;">새 사용자 등록</button>
+            <button id="show-register-btn" class="button neutral" style="margin-top: 12px; width: 100%;">새 사용자 등록 →</button>
           </div>
-          
+
+          <!-- 사용자 등록 섹션 -->
+          <div id="register-section" style="display: none;">
+            <h3>회원 가입</h3>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
+              사용자명과 비밀번호를 설정하고 Authenticator 앱을 연결하세요.
+            </p>
+            <form id="register-form" class="simple-form">
+              <label>
+                사용자명
+                <input type="text" id="register-username" name="username" placeholder="사용자명을 입력하세요" required>
+              </label>
+              <label>
+                비밀번호
+                <input type="password" id="register-password" name="password" placeholder="비밀번호 (최소 6자)" minlength="6" required>
+              </label>
+              <button type="submit" class="button primary" style="width: 100%;">등록하기</button>
+              <p id="register-message" class="form-note" role="status" aria-live="polite"></p>
+            </form>
+
+            <!-- QR 코드 표시 영역 -->
+            <div id="qr-section" style="display: none; margin-top: 1em; text-align: center;">
+              <p style="font-size: 0.9em; color: #27ae60; font-weight: bold; margin-bottom: 0.5em;">
+                ✅ 등록 완료! 아래 QR 코드를 Authenticator 앱으로 스캔하세요.
+              </p>
+              <img id="qr-code" style="max-width: 200px; margin: 10px auto; display: block;" alt="QR Code">
+              <p style="font-size: 0.8em; color: #999; margin-top: 10px;">
+                또는 수동으로 비밀키를 입력하세요:
+              </p>
+              <code id="secret-key" style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 240px; word-break: break-all; font-size: 13px;"></code>
+              <button id="show-login-btn" class="button primary" style="margin-top: 14px; width: 100%;">로그인 화면으로 이동 →</button>
+            </div>
+
+            <button id="back-to-login-btn" class="button neutral" style="margin-top: 10px; width: 100%;">← 로그인으로 돌아가기</button>
+          </div>
+
           <!-- 2단계 인증 섹션 -->
           <div id="twofa-section" style="display: none;">
+            <h3>2단계 인증</h3>
             <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
               Authenticator 앱에서 생성된 6자리 코드를 입력하세요.
             </p>
@@ -217,7 +221,7 @@
               <button type="submit" class="button primary" style="width: 100%;">인증</button>
               <p id="twofa-message" class="form-note" role="status" aria-live="polite"></p>
             </form>
-            <button id="cancel-login-btn" class="button secondary" style="margin-top: 10px;">취소</button>
+            <button id="cancel-login-btn" class="button neutral" style="margin-top: 10px; width: 100%;">← 취소</button>
           </div>
         </div>
 
@@ -226,7 +230,7 @@
           <p id="user-greeting" style="text-align: center; font-size: 1.1em; margin-bottom: 1em;">
             <strong id="current-user"></strong>님, 로그인되었습니다.
           </p>
-          <button id="logout-button" class="button secondary" type="button" style="display: block; margin: 0 auto;">로그아웃</button>
+          <button id="logout-button" class="button neutral" type="button" style="display: block; margin: 0 auto; width: 100%;">로그아웃</button>
         </div>
       </div>
 

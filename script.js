@@ -20,12 +20,19 @@ function setupEventListeners() {
     const twofaForm = document.getElementById('twofa-form');
     if (twofaForm) twofaForm.addEventListener('submit', handleLoginStep2);
 
+    // 로그인 화면으로 이동 (QR 확인 후)
     const showLoginBtn = document.getElementById('show-login-btn');
     if (showLoginBtn) showLoginBtn.addEventListener('click', () => showAuthSection('signin'));
 
+    // 회원가입 화면으로 이동
     const showRegisterBtn = document.getElementById('show-register-btn');
     if (showRegisterBtn) showRegisterBtn.addEventListener('click', () => showAuthSection('register'));
 
+    // 회원가입에서 로그인으로 돌아가기
+    const backToLoginBtn = document.getElementById('back-to-login-btn');
+    if (backToLoginBtn) backToLoginBtn.addEventListener('click', () => showAuthSection('signin'));
+
+    // 2단계 인증 취소
     const cancelLoginBtn = document.getElementById('cancel-login-btn');
     if (cancelLoginBtn) cancelLoginBtn.addEventListener('click', () => showAuthSection('signin'));
 
@@ -44,22 +51,26 @@ function setupEventListeners() {
 
 // 인증 섹션 표시 (register | signin | twofa)
 function showAuthSection(section) {
-    const registerSec = document.getElementById('register-section');
     const signinSec   = document.getElementById('signin-section');
+    const registerSec = document.getElementById('register-section');
     const twofaSec    = document.getElementById('twofa-section');
-    const qrSec       = document.getElementById('qr-section');
-    const registerFormEl = document.getElementById('register-form');
 
-    if (registerSec) registerSec.style.display = 'none';
+    // 모두 숨기기
     if (signinSec)   signinSec.style.display   = 'none';
+    if (registerSec) registerSec.style.display  = 'none';
     if (twofaSec)    twofaSec.style.display     = 'none';
 
-    if (section === 'register') {
+    if (section === 'signin') {
+        if (signinSec) signinSec.style.display = 'block';
+
+    } else if (section === 'register') {
         if (registerSec) registerSec.style.display = 'block';
+        // 등록 폼 보이기, QR 숨기기
+        const qrSec = document.getElementById('qr-section');
+        const registerFormEl = document.getElementById('register-form');
         if (qrSec) qrSec.style.display = 'none';
         if (registerFormEl) registerFormEl.style.display = 'block';
-    } else if (section === 'signin') {
-        if (signinSec) signinSec.style.display = 'block';
+
     } else if (section === 'twofa') {
         if (twofaSec) twofaSec.style.display = 'block';
         // TOTP 입력 필드 초기화 및 포커스
@@ -75,8 +86,8 @@ function showAuthSection(section) {
 function handleRegister(e) {
     e.preventDefault();
 
-    const username       = document.getElementById('register-username').value.trim();
-    const password       = document.getElementById('register-password').value.trim();
+    const username        = document.getElementById('register-username').value.trim();
+    const password        = document.getElementById('register-password').value.trim();
     const registerMessage = document.getElementById('register-message');
 
     if (!username || !password) {
@@ -105,7 +116,7 @@ function handleRegister(e) {
         document.getElementById('secret-key').textContent = data.secret;
         document.getElementById('qr-section').style.display = 'block';
         document.getElementById('register-form').style.display = 'none';
-        setMsg(registerMessage, '등록 성공! QR 코드를 Authenticator 앱으로 스캔하세요.', 'success');
+        setMsg(registerMessage, '', 'pending');
     })
     .catch(err => {
         setMsg(registerMessage, '등록 실패: ' + err.message, 'error');
@@ -130,7 +141,7 @@ function handleLoginStep1(e) {
     fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',   // ← 세션 쿠키 전송에 필수
+        credentials: 'include',
         body: JSON.stringify({ username, password })
     })
     .then(r => r.json())
@@ -148,9 +159,9 @@ function handleLoginStep1(e) {
 function handleLoginStep2(e) {
     e.preventDefault();
 
-    const codeInput   = document.getElementById('totp-code');
+    const codeInput    = document.getElementById('totp-code');
     const twofaMessage = document.getElementById('twofa-message');
-    const code        = codeInput.value.trim();
+    const code         = codeInput.value.trim();
 
     if (!code || code.length !== 6) {
         setMsg(twofaMessage, '6자리 인증 코드를 입력해주세요.', 'error');
@@ -162,7 +173,7 @@ function handleLoginStep2(e) {
     fetch('/api/auth/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',   // ← 세션 쿠키 전송에 필수
+        credentials: 'include',
         body: JSON.stringify({ code })
     })
     .then(r => r.json())
@@ -209,12 +220,12 @@ function showLoginUI() {
 }
 
 function showLoggedInUI(user) {
-    const loginSection  = document.getElementById('login-section');
-    const profileInfo   = document.getElementById('profile-info');
-    const profileForm   = document.getElementById('profile-form');
-    const currentUser   = document.getElementById('current-user');
+    const loginSection = document.getElementById('login-section');
+    const profileInfo  = document.getElementById('profile-info');
+    const profileForm  = document.getElementById('profile-form');
+    const currentUser  = document.getElementById('current-user');
 
-    if (currentUser) currentUser.textContent = user.username;
+    if (currentUser)  currentUser.textContent    = user.username;
     if (loginSection) loginSection.style.display = 'none';
     if (profileInfo)  profileInfo.style.display  = 'block';
     if (profileForm)  profileForm.style.display  = 'block';
@@ -338,8 +349,6 @@ function deleteDocument(docId, ev) {
 function loadProfiles() {
     const user = getCurrentUser();
     if (!user) return;
-
-    // 프로필 폼 필드에 저장된 값 채우기 (필요시)
 }
 
 function handleProfileSubmit(e) {
