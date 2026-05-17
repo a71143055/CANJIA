@@ -1,5 +1,5 @@
 // Current user storage key
-const USER_STORAGE_KEY = "canjia_naver_profile";
+const USER_STORAGE_KEY = "canjia_totp_user";
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,10 +11,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Naver login button
-    const navberLoginBtn = document.getElementById('naver-login-btn');
-    if (navberLoginBtn) {
-        navberLoginBtn.addEventListener('click', initiateNaverLogin);
+    // Register form
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+
+    // Login form
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+
+    // Show login button
+    const showLoginBtn = document.getElementById('show-login-btn');
+    if (showLoginBtn) {
+        showLoginBtn.addEventListener('click', showLoginSection);
+    }
+
+    // Show register button
+    const showRegisterBtn = document.getElementById('show-register-btn');
+    if (showRegisterBtn) {
+        showRegisterBtn.addEventListener('click', showRegisterSection);
     }
 
     // Logout button
@@ -24,7 +42,7 @@ function setupEventListeners() {
     }
 
     // Document form
-    const docForm = document.getElementById('document-form');
+    const docForm = document.getElementById('doc-form');
     if (docForm) {
         docForm.addEventListener('submit', handleDocumentSubmit);
     }
@@ -34,56 +52,126 @@ function setupEventListeners() {
     if (profileForm) {
         profileForm.addEventListener('submit', handleProfileSubmit);
     }
-
-    // Listen for messages from Naver callback window
-    window.addEventListener('message', handleNaverMessage);
 }
 
-// Initiate Naver OAuth flow
-function initiateNaverLogin() {
-    const clientId = NAVER_CONFIG.CLIENT_ID;
-    if (clientId === "YOUR_NAVER_CLIENT_ID") {
-        alert("네이버 Client ID를 설정해주세요. naver-config.js에서 CLIENT_ID를 수정하세요.");
-        return;
-    }
-
-    const redirectUri = NAVER_CONFIG.REDIRECT_URI;
-    const state = Math.random().toString(36).substring(7);
-    
-    // Store state for verification
-    sessionStorage.setItem('naver_oauth_state', state);
-    
-    // Open Naver OAuth authorization URL in popup
-    const authUrl = `https://nid.naver.com/oauth2.0/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&state=${state}`;
-    
-    window.open(authUrl, 'naver_oauth', 'width=500,height=600');
+// Show register section
+function showRegisterSection() {
+    document.getElementById('register-section').style.display = 'block';
+    document.getElementById('signin-section').style.display = 'none';
+    document.getElementById('qr-section').style.display = 'none';
 }
 
-// Handle message from Naver callback window
-function handleNaverMessage(event) {
-    // Verify origin
-    if (event.origin !== window.location.origin) {
+// Show login section
+function showLoginSection() {
+    document.getElementById('register-section').style.display = 'none';
+    document.getElementById('signin-section').style.display = 'block';
+    document.getElementById('qr-section').style.display = 'none';
+}
+
+// Handle user registration
+function handleRegister(e) {
+    e.preventDefault();
+    
+    const usernameInput = document.getElementById('register-username');
+    const registerMessage = document.getElementById('register-message');
+    const username = usernameInput.value.trim();
+    
+    if (!username) {
+        registerMessage.textContent = '사용자명을 입력해주세요.';
+        registerMessage.style.color = '#e74c3c';
         return;
     }
-
-    if (event.data.type === 'NAVER_LOGIN_SUCCESS') {
-        const profile = event.data.profile;
+    
+    registerMessage.textContent = '등록 처리 중...';
+    registerMessage.style.color = '#666';
+    
+    fetch('/api/auth/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
         
-        // Save profile to localStorage
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(profile));
+        // Show QR code
+        document.getElementById('qr-code').src = data.qr_code;
+        document.getElementById('secret-key').textContent = data.secret;
+        document.getElementById('qr-section').style.display = 'block';
+        document.getElementById('register-form').style.display = 'none';
+        
+        registerMessage.textContent = '등록 성공! QR 코드를 스캔하세요.';
+        registerMessage.style.color = '#27ae60';
+        
+        console.log('TOTP 등록 성공:', username);
+    })
+    .catch(err => {
+        console.error('Register error:', err);
+        registerMessage.textContent = '등록 실패: ' + err.message;
+        registerMessage.style.color = '#e74c3c';
+    });
+}
+
+// Handle login
+function handleLogin(e) {
+    e.preventDefault();
+    
+    const usernameInput = document.getElementById('login-username');
+    const codeInput = document.getElementById('totp-code');
+    const loginMessage = document.getElementById('login-message');
+    
+    const username = usernameInput.value.trim();
+    const code = codeInput.value.trim();
+    
+    if (!username || !code) {
+        loginMessage.textContent = '사용자명과 인증 코드를 입력해주세요.';
+        loginMessage.style.color = '#e74c3c';
+        return;
+    }
+    
+    loginMessage.textContent = '인증 처리 중...';
+    loginMessage.style.color = '#666';
+    
+    fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, code: code })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error || !data.success) {
+            throw new Error(data.error || '인증 실패');
+        }
+        
+        // Save user to localStorage
+        const user = {
+            username: username,
+            logged_in_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
         
         // Update UI
-        showLoggedInUI(profile);
+        showLoggedInUI(user);
         
         // Load documents and profiles for this user
         loadDocuments();
         loadProfiles();
         
-        console.log('네이버 로그인 성공:', profile.name);
-    } else if (event.data.type === 'NAVER_LOGIN_ERROR') {
-        alert('로그인 실패: ' + event.data.error);
-        console.error('Naver login error:', event.data.error);
-    }
+        // Clear input and show success message
+        codeInput.value = '';
+        loginMessage.textContent = '로그인 성공!';
+        loginMessage.style.color = '#27ae60';
+        
+        console.log('TOTP 로그인 성공:', username);
+    })
+    .catch(err => {
+        console.error('Login error:', err);
+        loginMessage.textContent = '로그인 실패: ' + err.message;
+        loginMessage.style.color = '#e74c3c';
+    });
 }
 
 // Load user session from localStorage
@@ -109,7 +197,7 @@ function showLoginUI() {
 }
 
 // Show logged in UI
-function showLoggedInUI(profile) {
+function showLoggedInUI(user) {
     const loginSection = document.getElementById('login-section');
     const profileInfo = document.getElementById('profile-info');
     const workspace = document.getElementById('workspace');
@@ -117,7 +205,7 @@ function showLoggedInUI(profile) {
     // Update current user display
     const currentUserSpan = document.getElementById('current-user');
     if (currentUserSpan) {
-        currentUserSpan.textContent = profile.name || profile.nickname || profile.email;
+        currentUserSpan.textContent = user.username;
     }
     
     // Show/hide sections
@@ -155,7 +243,7 @@ function loadDocuments() {
             if (!docList) return;
 
             // Filter documents for current user
-            const userDocs = data.filter(doc => doc.user_id === user.id);
+            const userDocs = data.filter(doc => doc.user_id === user.username);
 
             docList.innerHTML = '';
             if (userDocs.length === 0) {
@@ -199,7 +287,7 @@ function handleDocumentSubmit(e) {
     const document = {
         title: title,
         field: field,
-        user_id: user.id,
+        user_id: user.username,
         created_at: new Date().toISOString()
     };
 
@@ -257,7 +345,7 @@ function loadProfiles() {
             if (!profileList) return;
 
             // Filter profiles for current user
-            const userProfiles = data.filter(p => p.user_id === user.id);
+            const userProfiles = data.filter(p => p.user_id === user.username);
 
             profileList.innerHTML = '';
             if (userProfiles.length === 0) {
@@ -300,7 +388,7 @@ function handleProfileSubmit(e) {
     const profile = {
         interests: interests,
         plan: plan,
-        user_id: user.id,
+        user_id: user.username,
         created_at: new Date().toISOString()
     };
 

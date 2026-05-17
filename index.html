@@ -6,7 +6,6 @@
   <title>CANJIA | 제주 산업 발전 및 네트워크 공동체</title>
   <link rel="preconnect" href="https://images.unsplash.com">
   <link rel="stylesheet" href="styles.css">
-  <script src="naver-config.js"></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -146,15 +145,80 @@
         <p class="eyebrow">Login &amp; Profile Line</p>
         <h2 id="profile-title">로그인 및 프로필 관리</h2>
         <p>
-          CANJIA에 참여하려면 네이버로 로그인한 후 관심 분야와 제주 활동 계획을 프로필로 작성해주세요.
+          CANJIA에 참여하려면 사용자명/비밀번호로 로그인 후 2단계 인증을 완료해주세요.
         </p>
         
-        <!-- 네이버 로그인 버튼 -->
+        <!-- 2단계 로그인 -->
         <div id="login-section" class="auth-box">
-          <button id="naver-login-btn" class="button primary" style="width: 100%; padding: 12px; font-size: 1em; cursor: pointer;">
-            네이버로 로그인
-          </button>
-          <p id="login-message" class="form-note" role="status" aria-live="polite"></p>
+          <h3>로그인</h3>
+          
+          <!-- 사용자 등록 섹션 -->
+          <div id="register-section">
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
+              새 사용자 등록 - 비밀번호와 Authenticator 앱 설정
+            </p>
+            <form id="register-form" class="simple-form">
+              <label>
+                사용자명
+                <input type="text" id="register-username" name="username" placeholder="사용자명을 입력하세요" required>
+              </label>
+              <label>
+                비밀번호
+                <input type="password" id="register-password" name="password" placeholder="비밀번호 (최소 6자)" minlength="6" required>
+              </label>
+              <button type="submit" class="button primary" style="width: 100%;">등록하기</button>
+              <p id="register-message" class="form-note" role="status" aria-live="polite"></p>
+            </form>
+            
+            <!-- QR 코드 표시 영역 -->
+            <div id="qr-section" style="display: none; margin-top: 1em; text-align: center;">
+              <p style="font-size: 0.9em; color: #666; margin-bottom: 0.5em;">
+                아래 QR 코드를 Authenticator 앱으로 스캔하세요:
+              </p>
+              <img id="qr-code" style="max-width: 200px; margin: 10px auto; display: block;" alt="QR Code">
+              <p style="font-size: 0.8em; color: #999; margin-top: 10px;">
+                또는 수동으로 비밀키를 입력하세요:
+              </p>
+              <code id="secret-key" style="display: block; background: #f5f5f5; padding: 8px; border-radius: 4px; margin: 10px auto; max-width: 200px; word-break: break-all;"></code>
+              <button id="show-login-btn" class="button secondary" style="margin-top: 10px;">로그인 화면으로 이동</button>
+            </div>
+          </div>
+          
+          <!-- 1단계 로그인 섹션 -->
+          <div id="signin-section">
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
+              사용자명과 비밀번호로 로그인하세요.
+            </p>
+            <form id="login-form" class="simple-form">
+              <label>
+                사용자명
+                <input type="text" id="login-username" name="username" placeholder="사용자명을 입력하세요" required>
+              </label>
+              <label>
+                비밀번호
+                <input type="password" id="login-password" name="password" placeholder="비밀번호를 입력하세요" required>
+              </label>
+              <button type="submit" class="button primary" style="width: 100%;">로그인</button>
+              <p id="login-message" class="form-note" role="status" aria-live="polite"></p>
+            </form>
+            <button id="show-register-btn" class="button secondary" style="margin-top: 10px;">새 사용자 등록</button>
+          </div>
+          
+          <!-- 2단계 인증 섹션 -->
+          <div id="twofa-section" style="display: none;">
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
+              Authenticator 앱에서 생성된 6자리 코드를 입력하세요.
+            </p>
+            <form id="twofa-form" class="simple-form">
+              <label>
+                인증 코드
+                <input type="text" id="totp-code" name="code" placeholder="6자리 인증 코드" maxlength="6" pattern="[0-9]{6}" required>
+              </label>
+              <button type="submit" class="button primary" style="width: 100%;">인증</button>
+              <p id="twofa-message" class="form-note" role="status" aria-live="polite"></p>
+            </form>
+            <button id="cancel-login-btn" class="button secondary" style="margin-top: 10px;">취소</button>
+          </div>
         </div>
 
         <!-- 로그인 후 프로필 섹션 -->

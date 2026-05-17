@@ -3,69 +3,144 @@
 <head>
     <meta charset="utf-8">
     <title>Naver Callback</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            color: #333;
+        }
+        p {
+            margin: 10px 0;
+            color: #666;
+            line-height: 1.5;
+        }
+        .code-box {
+            background: #f8f9fa;
+            border: 2px solid #03C75A;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: #03C75A;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background: #02a34a;
+        }
+        .error {
+            color: #e74c3c;
+        }
+        .success {
+            color: #27ae60;
+        }
+    </style>
 </head>
 <body>
-    <p>Authenticating...</p>
+    <div class="container">
+        <h1>네이버 인증</h1>
+        <div id="status">
+            <p>인증 처리 중...</p>
+        </div>
+    </div>
     <script>
-        // Extract token from URL hash
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
+        // Extract authorization code from URL query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+        const state = urlParams.get('state');
         
-        const accessToken = params.get('access_token');
-        const error = params.get('error');
-        const errorDescription = params.get('error_description');
+        const statusDiv = document.getElementById('status');
         
         if (error) {
             // Auth failed
-            window.opener.postMessage({
-                type: 'NAVER_LOGIN_ERROR',
-                error: error,
-                error_description: errorDescription
-            }, window.location.origin);
-            window.close();
-        } else if (accessToken) {
-            // Get user profile using access token
-            fetch('https://openapi.naver.com/v1/nid/me', {
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.resultcode === '00') {
-                    const profile = data.response;
-                    window.opener.postMessage({
-                        type: 'NAVER_LOGIN_SUCCESS',
-                        profile: {
-                            id: profile.id,
-                            name: profile.name,
-                            email: profile.email,
-                            nickname: profile.nickname,
-                            profileImage: profile.profile_image,
-                            accessToken: accessToken
-                        }
-                    }, window.location.origin);
-                } else {
-                    window.opener.postMessage({
-                        type: 'NAVER_LOGIN_ERROR',
-                        error: 'Failed to get profile'
-                    }, window.location.origin);
-                }
-                window.close();
-            })
-            .catch(err => {
+            statusDiv.innerHTML = `
+                <p class="error">인증 실패</p>
+                <p>${errorDescription || error}</p>
+            `;
+            if (window.opener) {
                 window.opener.postMessage({
                     type: 'NAVER_LOGIN_ERROR',
-                    error: err.message
+                    error: error,
+                    error_description: errorDescription
                 }, window.location.origin);
-                window.close();
-            });
+            }
+            setTimeout(() => window.close(), 3000);
+        } else if (code) {
+            // Authorization Code Flow: Show the code to user
+            statusDiv.innerHTML = `
+                <p class="success">인증 코드가 생성되었습니다!</p>
+                <p>아래 코드를 복사해서 원래 창의 인증 코드 입력란에 붙여넣으세요.</p>
+                <div class="code-box" id="auth-code">${code}</div>
+                <button class="copy-btn" onclick="copyCode()">코드 복사</button>
+                <p style="font-size: 12px; margin-top: 15px;">이 창은 닫으셔도 됩니다.</p>
+            `;
+            
+            // Also send to opener if it's listening (for future use)
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'NAVER_AUTH_CODE',
+                    code: code,
+                    state: state
+                }, window.location.origin);
+            }
         } else {
-            window.opener.postMessage({
-                type: 'NAVER_LOGIN_ERROR',
-                error: 'No access token received'
-            }, window.location.origin);
-            window.close();
+            statusDiv.innerHTML = `
+                <p class="error">인증 코드를 받지 못했습니다.</p>
+                <p>다시 시도해주세요.</p>
+            `;
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'NAVER_LOGIN_ERROR',
+                    error: 'No authorization code received'
+                }, window.location.origin);
+            }
+            setTimeout(() => window.close(), 3000);
+        }
+        
+        function copyCode() {
+            const codeText = document.getElementById('auth-code').textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '복사 완료!';
+                setTimeout(() => {
+                    btn.textContent = '코드 복사';
+                }, 2000);
+            }).catch(err => {
+                alert('복사 실패: 수동으로 복사해주세요.');
+            });
         }
     </script>
 </body>
