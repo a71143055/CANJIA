@@ -27,6 +27,7 @@ USERS_FILE = DATA_DIR / "users.json"
 
 # ===== 문서(Document) 관리 =====
 
+
 def load_documents():
     """문서 데이터 로드"""
     if DOCUMENTS_FILE.exists():
@@ -79,12 +80,13 @@ def serve_index():
 
 @app.get("/<filename>")
 def serve_static(filename):
-    if filename in ["index.html", "script.js", "styles.css"]:
+    if filename in ["index.html", "script.js", "styles.css", "favicon.ico", "naver-callback.html", "naver-config.js"]:
         return send_from_directory(BASE_DIR, filename)
     return jsonify({"error": "Not found"}), 404
 
 
 # ===== 문서 API =====
+
 
 @app.get("/api/documents")
 def get_documents():
@@ -144,6 +146,7 @@ def delete_document():
 
 
 # ===== 프로필 API =====
+
 
 @app.get("/api/profiles")
 def get_profiles():
