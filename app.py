@@ -9,7 +9,16 @@ import pyotp
 import qrcode
 import io
 import base64
-from passlib.hash import bcrypt
+import bcrypt as _bcrypt
+
+class bcrypt:
+    @staticmethod
+    def hash(password: str) -> str:
+        return _bcrypt.hashpw(password.encode("utf-8"), _bcrypt.gensalt()).decode("utf-8")
+
+    @staticmethod
+    def verify(password: str, hashed: str) -> bool:
+        return _bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
 
 BASE_DIR = Path(__file__).resolve().parent
 
